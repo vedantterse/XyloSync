@@ -1,0 +1,1385 @@
+body {
+    background: linear-gradient(
+        125deg,
+        #000000 0%,
+        #050B1A 20%,
+        #0A1528 40%,
+        #102040 60%,
+        #0A1528 80%,
+        #000000 100%
+    );
+    background-size: 400% 400%;
+    color: rgba(0, 0, 0, 0.893);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    animation: gradientFlow 20s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    position: relative;
+    overflow: hidden; /* Prevent scroll */
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+        filter: saturate(1.4) brightness(0.85);
+    }
+    50% {
+        background-position: 100% 50%;
+        filter: saturate(1.5) brightness(0.95);
+    }
+    100% {
+        background-position: 0% 50%;
+        filter: saturate(1.4) brightness(0.85);
+    }
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 40px 40px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 70%);
+    pointer-events: none;
+    z-index: -1 !important;
+    animation: darkAmbient 20s ease-in-out infinite;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+        radial-gradient(circle at -5% 20%, rgba(237, 186, 58, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at -10% 35%, rgba(237, 186, 58, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 20%, rgba(246, 92, 179, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 50% 60%, rgba(109, 120, 171, 0.1) 0%, transparent 55%),
+        radial-gradient(circle at 75% 85%, rgba(32, 17, 92, 0.12) 0%, transparent 45%);
+    animation: floatingDark 25s ease-in-out infinite;
+    z-index: -1 !important;
+    mix-blend-mode: soft-light;
+}
+
+@keyframes darkGradient {
+    0% {
+        transform: translate(0, 0) scale(1);
+        filter: brightness(0.7) saturate(1.3) contrast(1.2);
+        opacity: 0.5;
+    }
+    25% {
+        transform: translate(-0.5%, 0.5%) scale(1.02);
+        filter: brightness(0.75) saturate(1.4) contrast(1.25);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translate(0.5%, -0.5%) scale(0.98);
+        filter: brightness(0.65) saturate(1.2) contrast(1.3);
+        opacity: 0.5;
+    }
+    75% {
+        transform: translate(-0.25%, 0.25%) scale(1.01);
+        filter: brightness(0.7) saturate(1.3) contrast(1.2);
+        opacity: 0.55;
+    }
+    100% {
+        transform: translate(0, 0) scale(1);
+        filter: brightness(0.7) saturate(1.3) contrast(1.2);
+        opacity: 0.5;
+    }
+}
+
+@keyframes gridFade {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes ambientLight {
+    0% {
+        transform: translate(0, 0) scale(1);
+        filter: brightness(1.5) saturate(1.1);
+    }
+    50% {
+        opacity: 0.8;
+        filter: brightness(0.9) saturate(1.3) contrast(1.2);
+        transform: scale(1.02);
+    }
+    75% {
+        opacity: 0.75;
+        filter: brightness(0.8) saturate(1.1) contrast(1.15);
+        transform: scale(0.98);
+    }
+    100% {
+        transform: translate(0, 0) scale(1);
+        filter: brightness(0.85) saturate(1.2) contrast(1.1);
+        opacity: 0.7;
+    }
+}
+
+@keyframes floatingDark {
+    0% {
+        transform: translate(0, 0) scale(1);
+        filter: brightness(0.85) saturate(1.2);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-1%, 1%) scale(1.02);
+        filter: brightness(0.9) saturate(1.3);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate(0, 0) scale(1);
+        filter: brightness(0.85) saturate(1.2);
+        opacity: 0.8;
+    }
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        transform: scale(0.5);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.5;
+    }
+}
+
+@keyframes rotateLights {
+    0% {
+        transform: translate(0, 0) scale(1);
+        filter: hue-rotate(0deg);
+    }
+    25% {
+        transform: translate(-1%, 1%) scale(1.02);
+        filter: hue-rotate(15deg);
+    }
+    50% {
+        transform: translate(1%, -1%) scale(0.98);
+        filter: hue-rotate(-15deg);
+    }
+    75% {
+        transform: translate(-1%, -1%) scale(1.02);
+        filter: hue-rotate(0deg);
+    }
+    100% {
+        transform: translate(0, 0) scale(1);
+        filter: hue-rotate(0deg);
+    }
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+}
+
+.sparkle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: sparkle var(--duration, 3s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: calc(100vh - 140px); /* Account for header and footer */
+    overflow: hidden;
+}
+
+
+
+h1 {
+ margin: 0; /* Remove default margin */
+ font-size: 2rem; /* Increase font size for visibility */
+}
+
+.upload-button {
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    box-shadow: 
+        0 4px 15px rgba(245, 158, 11, 0.2),
+        0 2px 5px rgba(249, 115, 22, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    border: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+    cursor: pointer;
+    overflow-x: hidden;
+    position: fixed;
+    right: 20px;
+    top: 80px;
+    z-index: 1000;
+}
+
+.upload-button::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 255, 255, 0.2) 0%,
+        transparent 50%
+    );
+    transform: rotate(45deg);
+    animation: buttonShine 8s linear infinite;
+}
+
+@keyframes buttonShine {
+    0% {
+        transform: rotate(45deg) translateY(-100%) translateX(-100%);
+        opacity: 0;
+    }
+    30% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    70% {
+        opacity: 0;
+    }
+    100% {
+        transform: rotate(45deg) translateY(100%) translateX(100%);
+        opacity: 0;
+    }
+}
+
+.upload-button:hover {
+    transform: rotate(45deg) scale(1.1);
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    box-shadow: 
+        0 6px 20px rgba(245, 158, 11, 0.3),
+        0 4px 8px rgba(249, 115, 22, 0.2),
+        0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.file-display-container {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.15),
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    height: calc(100vh - 200px);
+    margin: 20px auto;
+    padding: 20px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 30px;
+    padding: 40px 40px 25px;
+    max-width: 1200px;
+    width: 95%;
+    height: calc(105vh - 280px);
+    margin: 0 auto;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 15px;
+    align-items: start;
+    justify-items: center;
+    align-content: start;
+    position: relative;
+    z-index: 1;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    will-change: transform;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.file-display-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 0 0, rgba(29, 78, 216, 0.08), transparent 35%),
+        radial-gradient(circle at 100% 0, rgba(37, 99, 235, 0.08), transparent 35%),
+        radial-gradient(circle at 100% 100%, rgba(30, 64, 175, 0.08), transparent 35%),
+        radial-gradient(circle at 0 100%, rgba(26, 58, 147, 0.08), transparent 35%);
+    border-radius: inherit;
+    z-index: -1;
+    animation: cornerPulse 15s ease-in-out infinite;
+}
+
+@keyframes cornerPulse {
+    0%, 100% {
+        opacity: 0.6;
+        filter: brightness(0.9);
+    }
+    50% {
+        opacity: 0.8;
+        filter: brightness(1);
+    }
+}
+
+.file-container {
+    width: 130px;
+    height: 160px;
+    background-color: #f0ecbf !important;
+    border: 1px solid rgba(204, 204, 204, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    cursor: pointer;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    margin: 10px;
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.06);
+    will-change: transform, box-shadow;
+}
+
+.file-container * {
+    transform: none;
+}
+
+.file-container:hover {
+    transform: translateY(-8px);
+    box-shadow: 
+        0 12px 24px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.1);
+    background-color: #f0ecbf !important;
+}
+
+.file-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    box-shadow: 
+        0 8px 20px rgba(0,0,0,0.15),
+        0 4px 8px rgba(0,0,0,0.1);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+}
+
+.file-container:hover::after {
+    opacity: 1;
+    transform: translateY(5px);
+}
+
+.file-icon {
+ width: 50px;
+ height: 50px;
+}
+
+.file-name {
+ text-align: center;
+ display: block;
+ background-color: #000000;
+ color: white;
+ border-radius: 10px;
+ padding: 5px;
+ font-size: 12px;
+ transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+ width: 90%;
+ max-width: 100%;
+ overflow-wrap: break-word;
+ white-space: normal;
+ position: relative;
+ z-index: 1;
+ opacity: 1;
+ transform: translateY(0);
+}
+
+.file-container:hover .file-name {
+    opacity: 0;
+    transform: translateY(5px);
+    transition-delay: 0.1s;
+}
+
+.file-download-icon {
+ display: none;
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ transform: translate(-50%, -50%);
+ width: 50px;
+ height: 5px;
+ transition: opacity 0.3s ease;
+}
+
+.file-container:hover .file-download-icon {
+ display: block;
+ opacity: 1;
+}
+
+.file-container:hover .file-name {
+ opacity: 0;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(to bottom, #e27100, #ff0000);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.file-container:hover .remove-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.remove-btn:hover {
+    transform: scale(1.1);
+    background: linear-gradient(to bottom, #ff0000, #cc0000);
+}
+
+.download-icon {
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ transform: translate(-50%, -50%) scale(0.8);
+ opacity: 0;
+ background-color: rgba(18, 16, 16, 0.8);
+ border-radius: 50%;
+ padding: 10px;
+ display: none;
+ z-index: 2;
+ transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+ pointer-events: none; /* Ensures smooth hover transitions */
+}
+
+.file-container:hover .download-icon {
+ display: block;
+ opacity: 1;
+ transform: translate(-50%, -50%) scale(1);
+ pointer-events: auto;
+}
+
+.file-display-container:empty {
+ padding: 20px;
+ min-height: 300px;
+}
+
+.file-display-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.file-display-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.file-display-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.file-display-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+@media screen and (max-width: 1400px) {
+    .file-display-container {
+        grid-template-columns: repeat(6, minmax(130px, 1fr));
+    }
+}
+
+@media screen and (max-width: 1200px) {
+    .file-display-container {
+        grid-template-columns: repeat(5, minmax(130px, 1fr));
+    }
+}
+
+@media screen and (max-width: 992px) {
+    .file-display-container {
+        grid-template-columns: repeat(4, minmax(130px, 1fr));
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .file-display-container {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(45%, auto)) !important;
+        gap: 0 !important;
+        column-gap: 0 !important;
+        row-gap: 8px !important;
+        width: 100% !important;
+        max-width: 360px !important;
+        padding: 5px !important;
+        margin: 10px auto !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .file-container {
+        width: 100% !important;
+        max-width: 150px !important;
+        height: 130px !important;
+        margin: 0 !important;
+        padding: 5px !important;
+        border-radius: 15px !important;
+        background: rgba(254, 251, 216, 0.9) !important;
+        backdrop-filter: blur(5px) !important;
+        box-shadow: 
+            0 4px 15px rgba(0, 0, 0, 0.1),
+            0 2px 5px rgba(0, 0, 0, 0.05) !important;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .file-display-container {
+        max-width: 320px !important;
+        padding: 3px !important;
+    }
+
+    .file-container {
+        max-width: 140px !important;
+        height: 110px !important;
+    }
+}
+
+/* Fix iOS touch events */
+@supports (-webkit-touch-callout: none) {
+    .upload-button, 
+    .file-container,
+    .remove-btn,
+    .download-icon {
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}
+
+/* Fix iOS viewport height issue */
+@supports (-webkit-touch-callout: none) {
+    .file-display-container {
+        height: calc(100vh - 250px);
+        max-height: -webkit-fill-available;
+    }
+}
+
+/* Fix for iOS Safari 100vh issue */
+@supports (-webkit-touch-callout: none) {
+    body {
+        min-height: -webkit-fill-available;
+    }
+    html {
+        height: -webkit-fill-available;
+    }
+}
+
+html, body {
+ margin: 0;
+ padding: 0;
+ height: 100%;
+ display: flex;
+ flex-direction: column;
+ overflow-x: hidden;
+}
+
+header {
+    background: rgba(0, 0, 1, 0.625);
+    color: white;
+    width: 100%;
+    padding: 20px 0;
+    text-align: center;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+}
+
+.header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+}
+
+.header-container h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #ecf0f1;
+    position: relative;
+    display: inline-block;
+    padding: 0 15px;
+}
+
+.header-container h1::before,
+.header-container h1::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #1abc9c);
+    transform: translateY(-50%);
+}
+
+.header-container h1::before {
+    left: -40px;
+    background: linear-gradient(90deg, #1abc9c, transparent);
+}
+
+.header-container h1::after {
+    right: -40px;
+    background: linear-gradient(90deg, transparent, #1abc9c);
+}
+
+/* Add subtle glow effect */
+.header-container h1 span {
+    position: relative;
+}
+
+.header-container h1 span::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #1abc9c;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
+}
+
+.header-container:hover h1 span::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* Keep existing mobile responsive styles */
+@media screen and (max-width: 768px) {
+    header {
+        padding: 15px 0;
+    }
+
+    .header-container h1 {
+        font-size: 1.5em;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .header-container h1 {
+        font-size: 1.2em;
+    }
+    
+    .header-container h1::before,
+    .header-container h1::after {
+        width: 20px;
+    }
+}
+
+footer {
+    background: rgba(1, 5, 14, 0.603) !important;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    z-index: 1000 !important;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1001 !important;
+}
+
+.footer-container p {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-container a {
+    color: #1abc9c;
+    text-decoration: none;
+    font-weight: 600;
+    position: relative;
+    padding: 2px 4px;
+    transition: all 0.3s ease;
+    z-index: 1001 !important;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.footer-container a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #1abc9c;
+    transition: width 0.3s ease;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.footer-container a:hover {
+    color: #1abc9c;
+    text-shadow: 0 0 10px rgba(26, 188, 156, 0.5);
+}
+
+.footer-container a:hover::after {
+    width: 100%;
+}
+
+.footer-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+    padding: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.footer-icon:hover {
+    transform: translateY(-3px) rotate(360deg);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 15px rgba(26, 188, 156, 0.3);
+}
+
+.footer-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: #1abc9c;
+    transition: fill 0.3s ease;
+}
+
+.footer-icon:hover svg {
+    fill: #1abc9c;
+}
+
+/* Add this cool separator */
+.footer-separator {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: #1abc9c;
+    border-radius: 50%;
+    margin: 0 8px;
+    opacity: 0.7;
+}
+
+#bgVideo {
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ object-fit: cover;
+ z-index: -1; /* Ensure the video stays in the background */
+ opacity: 0.8; /* Optional: Make the video slightly transparent */
+}
+
+/* Upload Progress Container */
+.file-upload-progress-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background: rgba(13, 17, 23, 0.85);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 1000;
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Success State Container */
+.file-upload-progress-container.success {
+    background: linear-gradient(
+        135deg,
+        rgba(13, 17, 23, 0.9),
+        rgba(17, 24, 39, 0.95)
+    );
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    box-shadow: 
+        0 8px 32px rgba(34, 197, 94, 0.15),
+        0 4px 16px rgba(34, 197, 94, 0.1),
+        inset 0 1px 1px rgba(34, 197, 94, 0.05);
+}
+
+.file-upload-progress-container.success::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(
+        135deg,
+        rgba(34, 197, 94, 0.5),
+        rgba(22, 163, 74, 0.2)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Error State Container */
+.file-upload-progress-container.error {
+    background: linear-gradient(
+        135deg,
+        rgba(13, 17, 23, 0.9),
+        rgba(17, 24, 39, 0.95)
+    );
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    box-shadow: 
+        0 8px 32px rgba(239, 68, 68, 0.15),
+        0 4px 16px rgba(239, 68, 68, 0.1),
+        inset 0 1px 1px rgba(239, 68, 68, 0.05);
+}
+
+.file-upload-progress-container.error::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(
+        135deg,
+        rgba(239, 68, 68, 0.5),
+        rgba(220, 38, 38, 0.2)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Progress Bar Wrapper */
+.progress-bar-wrapper {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Base Progress Bar */
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(59, 130, 246, 0.7),
+        rgba(37, 99, 235, 0.8)
+    );
+    border-radius: 999px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Progress Bar Animation during upload */
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.15),
+        transparent
+    );
+    animation: shimmer 1.5s linear infinite;
+}
+
+/* Success State Progress Bar */
+.file-upload-progress-container.success .progress-bar {
+    background: linear-gradient(
+        90deg,
+        rgba(34, 197, 94, 0.7),
+        rgba(22, 163, 74, 0.8)
+    );
+}
+
+/* Error State Progress Bar */
+.file-upload-progress-container.error .progress-bar {
+    background: linear-gradient(
+        90deg,
+        rgba(239, 68, 68, 0.7),
+        rgba(220, 38, 38, 0.8)
+    );
+}
+
+/* Progress Text */
+.progress-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Success Text */
+.file-upload-progress-container.success .progress-text {
+    color: rgba(34, 197, 94, 0.9);
+    text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+}
+
+/* Error Text */
+.file-upload-progress-container.error .progress-text {
+    color: rgba(239, 68, 68, 0.9);
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(0) skewX(-15deg); }
+    100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%) translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Hover Effects */
+.file-upload-progress-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.07);
+}
+
+/* Success hover state */
+.file-upload-progress-container.success:hover {
+    box-shadow: 
+        0 12px 40px rgba(34, 197, 94, 0.2),
+        0 4px 16px rgba(34, 197, 94, 0.15),
+        inset 0 1px 1px rgba(34, 197, 94, 0.07);
+}
+
+/* Error hover state */
+.file-upload-progress-container.error:hover {
+    box-shadow: 
+        0 12px 40px rgba(239, 68, 68, 0.2),
+        0 4px 16px rgba(239, 68, 68, 0.15),
+        inset 0 1px 1px rgba(239, 68, 68, 0.07);
+}
+
+/* State transition animation */
+@keyframes statePulse {
+    0% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.02); filter: brightness(1.1); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+.file-upload-progress-container.success,
+.file-upload-progress-container.error {
+    animation: statePulse 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add this keyframe animation */
+@keyframes fileAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        filter: blur(5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Add a subtle hover animation */
+.file-container:hover {
+    transform: translateY(-8px) scale(1.03) !important;
+    box-shadow: 
+        0 12px 24px rgba(0,0,0,0.1),
+        0 6px 12px rgba(0,0,0,0.08);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add a subtle floating animation after the initial appear animation */
+.file-container.appeared {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* Add subtle glow effect */
+.file-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.file-container:hover::before {
+    opacity: 1;
+}
+
+.seo-description {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* Hide background video for iOS */
+    #bgVideo {
+        display: none !important;
+    }
+
+    /* Add a static gradient background for iOS */
+    body {
+        background: linear-gradient(145deg, #000C24, #0F2847) !important;
+        min-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .file-display-container {
+        height: calc(100vh - 280px) !important;
+        max-height: -webkit-fill-available !important;
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 20px !important;
+        margin-bottom: 20px !important;
+        flex: 1 !important;
+    }
+
+    /* Ensure footer is visible on iOS */
+    footer {
+        position: static !important;
+        width: 100% !important;
+        bottom: 0 !important;
+        background-color: rgba(0, 12, 36, 0.4) !important;
+        padding: 15px 0 !important;
+        margin-top: auto !important;
+        z-index: 100 !important;
+    }
+
+    .container {
+        flex: 1 0 auto !important;
+        padding-bottom: 60px !important; /* Space for footer */
+    }
+}
+
+/* Additional iOS fixes for smaller screens */
+@media screen and (max-width: 480px) and (-webkit-touch-callout: none) {
+    .file-display-container {
+        height: calc(100vh - 300px) !important;
+        padding-bottom: 120px !important;
+    }
+}
+
+/* Performance optimizations */
+.file-display-container, .file-container {
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Add smooth scrolling for desktop */
+@media (hover: hover) {
+    .file-display-container {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Desktop animations */
+@media screen and (min-width: 769px) {
+    .file-container {
+        opacity: 0;
+        animation: fileAppear 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        animation-delay: calc(var(--animation-order) * 0.15s);
+        transform-origin: center bottom;
+        transform-style: preserve-3d;
+        will-change: transform, opacity;
+    }
+
+    @keyframes fileAppear {
+        0% {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            filter: blur(5px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+    }
+
+    .file-container.appeared {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0px); }
+    }
+}
+
+/* Mobile - simpler animations */
+@media screen and (max-width: 768px) {
+    .file-container {
+        opacity: 0;
+        animation: simpleFadeIn 0.3s ease-out forwards;
+    }
+
+    @keyframes simpleFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Add loading shimmer effect */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.loading::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Add glass morphism particles */
+.glass-particle {
+    position: fixed;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border-radius: 50%;
+    backdrop-filter: blur(5px);
+    animation: floatParticle var(--duration) ease-in-out infinite;
+    z-index: 0;
+}
+
+@keyframes floatParticle {
+    0%, 100% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+        opacity: 0;
+    }
+    25% {
+        transform: translate(var(--x1), var(--y1)) scale(1.2) rotate(90deg);
+        opacity: var(--opacity);
+    }
+    75% {
+        transform: translate(var(--x2), var(--y2)) scale(0.8) rotate(180deg);
+        opacity: var(--opacity);
+    }
+}
+
+/* Upload button wrapper styles */
+#uploadWrapper {
+    overflow: hidden;
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    right: 20px;
+    top: 80px; /* Default position for desktop */
+    z-index: 1001;
+}
+
+/* Mobile-specific positioning */
+@media screen and (max-width: 768px) {
+    #uploadWrapper {
+        top: 15px; /* Move near header for mobile */
+        right: 15px;
+    }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    #fileInput {
+        cursor: pointer;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 100px;
+        z-index: 1002; /* Higher than button */
+        opacity: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* Add these specific progress bar styles */
+.progress-wrapper {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    height: 6px;
+    position: relative;
+}
+
+.progress-wrapper .progress-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #3498db;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+}
+
+/* Success state */
+.progress-wrapper .progress-bar.success {
+    background: #2ecc71 !important;
+}
+
+/* Error state */
+.progress-wrapper .progress-bar.error {
+    background: #e74c3c !important;
+}
+
+/* Override any conflicting styles */
+.upload-progress-container .progress-bar,
+.file-upload-progress-container .progress-bar {
+    background: #3498db !important;
+}
+
+.upload-progress-container.success .progress-bar,
+.file-upload-progress-container.success .progress-bar {
+    background: #2ecc71 !important;
+}
+
+.upload-progress-container.error .progress-bar,
+.file-upload-progress-container.error .progress-bar {
+    background: #e74c3c !important;
+}
+

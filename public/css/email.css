@@ -1,0 +1,1142 @@
+/* Modern Variables */
+:root {
+    --primary-gradient: linear-gradient(135deg, #6366f1, #141249);
+    --hover-gradient: linear-gradient(135deg, #4f46e5, #4338ca);
+    --morphism-bg: linear-gradient(145deg, rgba(26, 27, 38, 0.9), rgba(18, 18, 25, 0.95));
+    --glow-color: rgba(99, 102, 241, 0.5);
+    --surface-color: rgba(17, 24, 39, 0.95);
+    --border-color: rgba(255, 255, 255, 0.05);
+    --text-primary: #fff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --success-gradient: linear-gradient(135deg, #34d399, #059669);
+    --error-gradient: linear-gradient(135deg, #ef4444, #dc2626);
+    --morphism-shadow: 
+        -8px -8px 20px rgba(255, 255, 255, 0.03),
+        8px 8px 20px rgba(0, 0, 0, 0.4);
+    --neon-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Glass Morphism Base */
+.glass-morphism {
+    background: var(--morphism-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--morphism-shadow);
+}
+
+/* XyloMail Button */
+.xylo-mail-btn {
+    position: fixed;
+    right: 40px;
+    top: 20px;
+    transform: none;
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.xylo-mail-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.xylo-mail-btn:hover::before {
+    left: 100%;
+}
+
+.xylo-mail-btn:hover {
+    background: var(--hover-gradient);
+}
+
+.btn-glow {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: var(--primary-gradient);
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.xylo-mail-btn:hover .btn-glow {
+    opacity: 0.6;
+}
+
+.mail-icon {
+    font-size: 18px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* XyloMail Popup Enhanced */
+.xylomail-popup {
+    position: fixed;
+    top: 20px;
+    right: -420px;
+    width: 400px;
+    background: var(--morphism-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    box-shadow: var(--morphism-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+    display: none;
+    border: 1px solid var(--border-color);
+    animation: popupSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.xylomail-popup.active {
+    right: 20px;
+    display: block;
+}
+
+.xylomail-content {
+    padding: 24px;
+}
+
+.xylomail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-wrapper {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-gradient);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-icon {
+    font-size: 20px;
+    color: var(--text-primary);
+}
+
+.xylomail-header h2 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Glass Form */
+.glass-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    top: 9px;
+    color: var(--text-secondary);
+    font-size: 18px;
+    z-index: 2;
+}
+
+.input-group input,
+.input-group textarea,
+.email-chips {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--morphism-shadow);
+}
+
+.input-group input:focus,
+.input-group textarea:focus,
+.email-chips:focus-within {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: var(--neon-glow);
+    transform: translateY(-1px);
+}
+
+.input-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.input-group input:focus ~ .input-glow,
+.input-group textarea:focus ~ .input-glow {
+    opacity: 1;
+    box-shadow: 0 0 20px var(--glow-color);
+}
+
+/* File Input */
+.file-input-group {
+    position: relative;
+    margin-top: 16px;
+}
+
+.file-label {
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.file-label-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--primary-gradient);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-primary);
+    box-shadow: var(--morphism-shadow);
+}
+
+.file-label:hover .file-label-content {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    background: var(--hover-gradient);
+}
+
+.file-label .file-icon {
+    width: 24px;
+    height: 24px;
+    stroke: var(--text-primary);
+}
+
+.mail-file-input {
+    display: none;
+}
+
+.selected-file {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--morphism-bg);
+    box-shadow: var(--morphism-shadow);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.glass-effect {
+    box-shadow: 
+        0 4px 24px -1px rgba(0, 0, 0, 0.1),
+        0 2px 12px -1px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Size limit notification */
+.size-limit-alert {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: var(--error-gradient);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    transform: translateY(-10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    animation: alertSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.size-limit-alert.show {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.size-limit-alert span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Submit Button with Progress */
+.submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--morphism-shadow);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+}
+
+.submit-btn.sending {
+    pointer-events: none;
+    animation: buttonPulse 2s infinite;
+}
+
+/* Progress bar container */
+.progress-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.submit-btn.sending .progress-container {
+    opacity: 1;
+}
+
+/* Animated progress bar */
+.progress-bar {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.1), 
+        rgba(255,255,255,0.4), 
+        rgba(255,255,255,0.1)
+    );
+    transform: translateX(-100%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.submit-btn.sending .progress-bar {
+    animation: moveProgress 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Progress percentage display */
+.progress-status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.submit-btn.sending .progress-status {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.submit-btn.sending .btn-content,
+.submit-btn.sending .btn-icon {
+    opacity: 0;
+}
+
+/* Progress circles */
+.progress-dots {
+    display: flex;
+    gap: 4px;
+    margin-left: 4px;
+}
+
+.progress-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    opacity: 0.5;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.submit-btn.sending .progress-dot {
+    animation: dotPulse 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.submit-btn.sending .progress-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.submit-btn.sending .progress-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/* Success state */
+.submit-btn.success {
+    background: var(--success-gradient);
+    animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.submit-btn.success .success-icon {
+    animation: successPop 0.5s ease;
+}
+
+/* Error state */
+.submit-btn.error {
+    background: var(--error-gradient);
+    animation: errorShake 0.5s cubic-bezier(0.36, 0, 0.66, -0.56);
+}
+
+/* Animations */
+@keyframes moveProgress {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes dotPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 1;
+    }
+}
+
+@keyframes successPop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* Progress text animation */
+.progress-text {
+    font-size: 14px;
+    font-weight: 500;
+    background: linear-gradient(90deg, var(--text-primary) 0%, rgba(255,255,255,0.8) 50%, var(--text-primary) 100%);
+    background-size: 200% auto;
+    color: var(--text-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    to {
+        background-position: 200% center;
+    }
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    stroke: var(--text-primary);
+    transition: transform 0.3s;
+}
+
+.submit-btn:hover .btn-icon {
+    transform: translateX(4px);
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--primary-gradient);
+    filter: blur(20px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.submit-btn:hover::before {
+    opacity: 0.4;
+}
+
+/* Input and Textarea Styles */
+.input-group textarea {
+    resize: none;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.input-group {
+    position: relative;
+}
+
+.char-counter {
+    position: absolute;
+    bottom: -20px;
+    right: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.char-counter.limit {
+    color: #e74c3c;
+    text-shadow: 0 0 8px rgba(231, 76, 60, 0.4);
+    animation: counterPulse 0.5s ease infinite;
+}
+
+@keyframes counterPulse {
+    50% {
+        text-shadow: 0 0 15px rgba(231, 76, 60, 0.6);
+    }
+}
+
+/* Responsive adjustments for the button only */
+@media screen and (max-width: 768px) {
+    .xylo-mail-btn {
+        right: 20px;
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .xylo-mail-btn {
+        padding: 0.5rem 1rem;
+    }
+    
+    .xylo-mail-btn .btn-text {
+        display: none; /* Hide text on very small screens */
+    }
+}
+
+/* Add these styles for disabled state */
+.xylo-mail-btn.disabled {
+    position: fixed !important;
+    right: 40px !important;
+    top: 20px !important;
+    transform: none !important;
+    opacity: 0.5;
+    background: linear-gradient(135deg, #808080, #404040) !important;
+    cursor: not-allowed;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10;
+}
+
+.xylo-mail-btn.disabled::before {
+    display: none; /* Disable the shine effect when disabled */
+}
+
+.xylo-mail-btn.disabled .btn-glow {
+    display: none;
+}
+
+/* Tooltip styles */
+.xylo-mail-btn.disabled::after {
+    content: 'Disabled by admin';
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.xylo-mail-btn.disabled:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Email Chips Styles */
+.email-chips-container {
+    position: relative;
+}
+
+.email-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 40px;
+    min-height: 42px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: calc(100% - 40px);
+    box-sizing: border-box;
+    box-shadow: var(--morphism-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.email-chips:focus-within {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: var(--neon-glow);
+    transform: translateY(-1px);
+}
+
+.chips-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.email-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--primary-gradient);
+    border-radius: 16px;
+    font-size: 13px;
+    color: var(--text-primary);
+    animation: chipFloat 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    margin: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes chipFloat {
+    0% {
+        transform: translateY(10px) scale(0.9);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.email-chip .chip-text {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.email-chip .remove-chip {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px;
+    margin-left: 2px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    border-radius: 50%;
+}
+
+.email-chip .remove-chip:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.email-chips input[type="email"] {
+    flex: 1;
+    min-width: 150px;
+    background: none;
+    border: none;
+    padding: 4px;
+    font-size: 14px;
+    color: var(--text-primary);
+    height: 24px;
+}
+
+.recipient-limit-alert {
+    position: absolute;
+    top: -30px;
+    right: 0;
+    background: var(--error-gradient);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    transform: translateY(-10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    display: none;
+    animation: alertSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.recipient-limit-alert.show {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+    display: block;
+}
+
+/* Update input group styles for email chips */
+.input-group.email-chips-container {
+    position: relative;
+}
+
+.input-group.email-chips-container .input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    color: var(--text-secondary);
+    font-size: 18px;
+}
+
+.input-group.email-chips-container .input-glow {
+    z-index: 1;
+}
+
+@keyframes alertSlide {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Success/Error Icons */
+.success-icon, .error-icon {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    animation: iconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.success-icon {
+    stroke: #34d399;
+    filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.5));
+}
+
+.error-icon {
+    stroke: #ef4444;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+}
+
+@keyframes iconPop {
+    0% {
+        transform: scale(0) rotate(-45deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(0);
+    }
+    100% {
+        transform: scale(1) rotate(0);
+        opacity: 1;
+    }
+}
+
+/* Update progress status for success/error states */
+.submit-btn.success .progress-status,
+.submit-btn.error .progress-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.submit-btn.success .progress-text {
+    color: #34d399;
+    background: linear-gradient(90deg, #34d399 0%, #059669 50%, #34d399 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+.submit-btn.error .progress-text {
+    color: #ef4444;
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #ef4444 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+/* Message Input */
+.input-group textarea {
+    resize: none;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.5;
+    font-size: 14px;
+    padding: 12px 12px 12px 40px;
+}
+
+/* Submit Button Enhanced */
+.submit-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--morphism-shadow);
+    height: 52px;
+}
+
+.submit-btn .btn-content,
+.submit-btn .progress-status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    transition: all 0.4s ease;
+}
+
+.submit-btn .progress-status {
+    transform: translate(-50%, 50px);
+    opacity: 0;
+}
+
+/* Loading State */
+.submit-btn.loading .btn-content {
+    transform: translate(-50%, -100px);
+    opacity: 0;
+}
+
+.submit-btn.loading .progress-status {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+}
+
+.submit-btn.loading {
+    background: var(--morphism-bg);
+    pointer-events: none;
+}
+
+/* Progress text styling */
+.progress-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.submit-btn.loading .progress-text {
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.8) 0%, 
+        rgba(255,255,255,1) 50%, 
+        rgba(255,255,255,0.8) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+/* Success State */
+.submit-btn.success {
+    background: var(--success-gradient);
+}
+
+.submit-btn.success .btn-content {
+    transform: translate(-50%, -100px);
+    opacity: 0;
+}
+
+.submit-btn.success .progress-status {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+}
+
+.submit-btn.success .progress-text {
+    color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: none;
+}
+
+/* Error State */
+.submit-btn.error {
+    background: var(--error-gradient);
+}
+
+.submit-btn.error .btn-content {
+    transform: translate(-50%, -100px);
+    opacity: 0;
+}
+
+.submit-btn.error .progress-status {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+}
+
+.submit-btn.error .progress-text {
+    color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: none;
+}
+
+/* Progress Dots */
+.progress-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+}
+
+.progress-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: dotPulse 1.4s infinite;
+}
+
+.progress-dot:nth-child(2) { animation-delay: 0.2s; }
+.progress-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotPulse {
+    0%, 100% { transform: scale(0.5); opacity: 0.5; }
+    50% { transform: scale(1); opacity: 1; }
+}
+
+/* Progress Bar */
+.progress-bar-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--text-primary);
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    animation: progressShimmer 1.5s infinite;
+}
+
+@keyframes progressShimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.submit-btn.loading .progress-bar-container {
+    opacity: 1;
+}
+
+/* Status Message */
+.status-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--morphism-shadow);
+}
+
+.status-message.success {
+    background: var(--success-gradient);
+}
+
+.status-message.error {
+    background: var(--error-gradient);
+}
+
+.status-message.show {
+    transform: translateX(0);
+}
+
+
+/* Common styles for mobile devices */
+@media only screen and (hover: none) and (pointer: coarse),
+       only screen and (max-width: 768px),
+       only screen and (-webkit-min-device-pixel-ratio: 2) and (max-width: 1024px),
+       only screen and (min-resolution: 192dpi) and (max-width: 1024px) {
+    #xyloMailBtn,
+    .xylo-mail-btn,
+    #xyloMailPopup,
+    .xylomail-popup {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        width: 0 !important;
+        height: 0 !important;
+        clip: rect(0 0 0 0) !important;
+    }
+}

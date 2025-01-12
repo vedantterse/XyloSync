@@ -1,0 +1,366 @@
+
+
+/* Clerk styles */
+
+
+/* Clerk Styles - Single Source of Truth */
+.user-profile-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 20px !important;
+    z-index: 99999 !important;
+    display: block !important;
+}
+
+#user-button {
+    position: relative !important;
+    background: rgba(23, 32, 42, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 8px !important;
+    padding: 4px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Clerk Component Styles */
+.cl-component {
+    --cl-background-color: rgba(23, 32, 42, 0.95) !important;
+    --cl-text-color: #ffffff !important;
+    --cl-border-radius: 8px !important;
+    --cl-input-background-color: rgba(255, 255, 255, 0.05) !important;
+    --cl-input-border-color: rgba(255, 255, 255, 0.1) !important;
+    --cl-button-background-color: #3498db !important;
+    --cl-button-text-color: #ffffff !important;
+}
+
+/* User Profile Container */
+.user-profile-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 20px !important;
+    z-index: 99999 !important;
+    display: block !important;
+}
+
+#user-button {
+    position: relative !important;
+    background: rgba(23, 32, 42, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 8px !important;
+    padding: 4px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Clerk Elements */
+.cl-userButtonBox,
+.cl-userButtonTrigger,
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverActions,
+.cl-userButtonPopoverFooter,
+.cl-userPreview,
+.cl-userButtonPopoverRootBox,
+.cl-userButtonPopoverButton,
+.cl-userPreviewMainIdentifier,
+.cl-userPreviewSecondaryIdentifier,
+.cl-navbar,
+.cl-navbar button,
+.cl-navbar-button,
+.cl-navbar-button:not(.cl-active),
+.cl-navbar-button.cl-active,
+.cl-page-heading,
+.cl-page-heading *,
+.cl-main button,
+.cl-main *,
+.cl-account-main,
+.cl-account-main *,
+.cl-account-navigation,
+.cl-account-navigation *,
+.cl-account-navigation button,
+.cl-account-navigation-button,
+.cl-account-navigation-button:not(.cl-active),
+.cl-account-navigation-button.cl-active {
+    color: #ffffff !important;
+    background-color: rgba(23, 32, 42, 0.95) !important;
+}
+
+/* Badge Styles */
+.cl-badge,
+.cl-badge *,
+.cl-badge-root,
+.cl-badge-root * {
+    color: #ffffff !important;
+    background-color: rgba(52, 152, 219, 0.3) !important;
+    border: 1px solid rgba(52, 152, 219, 0.5) !important;
+}
+
+/* Active States */
+.cl-badge.cl-active,
+.cl-badge-root.cl-active,
+.cl-navbar-button.cl-active,
+.cl-account-navigation-button.cl-active {
+    background-color: rgba(52, 152, 219, 0.5) !important;
+    color: #ffffff !important;
+}
+
+/* Hover States */
+.cl-navbar-button:hover,
+.cl-account-navigation-button:hover {
+    background-color: rgba(52, 152, 219, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Modal Backdrop */
+.cl-modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input {
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: #3498db;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+button {
+    padding: 12px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #3498db;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0;
+}
+
+/* Clerk Component Styles */
+.cl-component {
+    --cl-background-color: rgba(23, 32, 42, 0.95) !important;
+    --cl-text-color: #ffffff !important;
+    --cl-border-radius: 8px !important;
+    --cl-input-background-color: rgba(255, 255, 255, 0.05) !important;
+    --cl-input-border-color: rgba(255, 255, 255, 0.1) !important;
+    --cl-button-background-color: #3498db !important;
+    --cl-button-text-color: #ffffff !important;
+}
+
+/* Badge Styles */
+.cl-badge,
+.cl-badge *,
+.cl-badge-root,
+.cl-badge-root * {
+    color: #ffffff !important;
+    background-color: rgba(52, 152, 219, 0.3) !important;
+    border: 1px solid rgba(52, 152, 219, 0.5) !important;
+}
+
+/* Active badge */
+.cl-badge.cl-active,
+.cl-badge-root.cl-active {
+    background-color: rgba(52, 152, 219, 0.5) !important;
+    border-color: rgba(52, 152, 219, 0.8) !important;
+}
+
+/* Hover states */
+.cl-navbar-button:hover,
+.cl-account-navigation-button:hover {
+    background-color: rgba(52, 152, 219, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Modal Backdrop */
+.cl-modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+/* Auth Container Styles */
+.auth-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    background: rgba(23, 32, 42, 0.95);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+.modal.show {
+    display: block;
+}
+
+.modal-content {
+    background: transparent;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* User Profile Display */
+.user-profile-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 20px !important;
+    z-index: 99999 !important;
+    display: block !important;
+}
+
+#user-button {
+    position: relative !important;
+    background: rgba(23, 32, 42, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 8px !important;
+    padding: 4px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Clerk Account Management Styles */
+.cl-navbar,
+.cl-navbar button,
+.cl-navbar-button,
+.cl-navbar-button:not(.cl-active),
+.cl-navbar-button.cl-active,
+.cl-page-heading,
+.cl-page-heading *,
+.cl-main button,
+.cl-main *,
+.cl-account-main,
+.cl-account-main *,
+.cl-account-navigation,
+.cl-account-navigation *,
+.cl-account-navigation button,
+.cl-account-navigation-button,
+.cl-account-navigation-button:not(.cl-active),
+.cl-account-navigation-button.cl-active {
+    color: #ffffff !important;
+    background-color: rgba(23, 32, 42, 0.95) !important;
+}
+
+/* Active state for navigation buttons */
+.cl-navbar-button.cl-active,
+.cl-account-navigation-button.cl-active {
+    background-color: rgba(52, 152, 219, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Hover states */
+.cl-navbar-button:hover,
+.cl-account-navigation-button:hover {
+    background-color: rgba(52, 152, 219, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Hide elements */
+.hidden {
+    display: none !important;
+}
+
+/* User Profile Container */
+.user-profile-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: none; /* Will be shown when user is authenticated */
+}
+
+#user-button {
+    background: rgba(23, 32, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: #ffffff !important;
+}
+
+.cl-userButtonBox,
+.cl-userButtonTrigger,
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverActions,
+.cl-userButtonPopoverFooter,
+.cl-userPreview,
+.cl-userButtonPopoverRootBox,
+.cl-userButtonPopoverButton,
+.cl-userPreviewMainIdentifier,
+.cl-userPreviewSecondaryIdentifier,
+.cl-userButtonPopoverActions button,
+.cl-userButtonPopoverFooter button,
+.cl-userButtonPopoverCard *,
+.cl-internal-b3fm6y {
+    color: #ffffff !important;
+    background: rgba(23, 32, 42, 0.95) !important;
+}
+
+/* Specific styles for buttons in popover */
+.cl-userButtonPopoverActions button,
+.cl-userButtonPopoverFooter button {
+    color: #ffffff !important;
+}
+
+/* Hover states */
+.cl-userButtonPopoverActions button:hover,
+.cl-userButtonPopoverFooter button:hover {
+    background: rgba(52, 152, 219, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Modal Backdrop */
+.cl-modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(8px) !important;
+}

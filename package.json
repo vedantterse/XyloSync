@@ -1,0 +1,41 @@
+{
+  "name": "xylosync",
+  "version": "1.0.0",
+  "description": "Secure file sharing portal with real-time synchronization",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "dependencies": {
+    "@clerk/clerk-js": "^5.43.4",
+    "@supabase/supabase-js": "^2.47.10",
+    "archiver": "^7.0.1",
+    "axios": "^1.7.7",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "connect-redis": "^7.1.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.0",
+    "express-session": "^1.18.1",
+    "filestore": "file:",
+    "memorystore": "^1.6.7",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
+    "redis": "^4.7.0",
+    "session-file-store": "^1.5.0",
+    "sib-api-v3-sdk": "^8.5.0",
+    "socket.io": "^4.8.0",
+    "socket.io-client": "^4.8.0",
+    "uuid": "^10.0.0",
+    "xylosync": "file:"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <title>XyloSync - Secure File Sharing!</title>
+    <!-- Essential Meta Tags -->
+    <meta name="description" content="XyloSync - The secure and fast file sharing portal. Share files instantly with end-to-end encryption and real-time synchronization. Free, secure, and easy to use.">
+    <meta name="keywords" content="XyloSync, Xylo Sync, file sharing, secure file transfer, cloud storage, real-time sync, file upload, secure sharing, instant file transfer">
+    <meta name="author" content="Vedantterse">
+    <meta name="robots" content="index, follow">
+    <!-- Your existing styles -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/index.css" /> 
+    <link rel="stylesheet" href="css/clerk.css" />
+    <!-- Preload critical resources -->
+    <link rel="preload" href="css/index.css" as="style">
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="css/clerk.css" as="style">
+    <!-- Socket.io client -->
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" 
+            integrity="sha384-JnYWOFVkPE8ojYz4/wKpzZFEp8ZhxJHqeYtqm7uc4BwyLEqVx6njLm0QQyZEO6Zr" 
+            crossorigin="anonymous"></script>
+    
+    <!-- Your existing scripts -->
+    <script src="js/auth.js" defer></script>
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <!-- User Profile -->
+    <div class="user-profile-container">
+        <div id="user-button"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="login-container">
+        <div class="login-header">
+            <h1>XyloSync</h1>
+            <p>File Sharing Portal</p>
+        </div>
+        <div class="room-buttons-container">
+            <button class="room-button create-room">Create Room</button>
+            <div class="divider">
+                <span></span>
+                <div class="orb"></div>
+                <span></span>
+            </div>
+            <button class="room-button join-room">Join Room</button>
+        </div>
+    </div>
+    <!-- Add this after your existing buttons -->
+    <div class="join-room-modal" id="joinRoomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Join Room</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="code-input-container">
+                    <input type="text" 
+                           maxlength="5" 
+                           placeholder="Enter 5-digit code"
+                           id="roomCodeInput"
+                           class="room-code-input">
+                    <div class="code-validation-indicator"></div>
+                </div>
+                <button class="join-btn" id="joinRoomBtn">Join Room</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

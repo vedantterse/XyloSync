@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="google-site-verification" content="fLvgfwC6fL_UrvF45tVrqm-xJBnh7x4_TEqdcpirJOs" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#17202A">
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/email.css">
+    <link rel="stylesheet" href="css/clerk.css">
+    <title>XyloSync</title>
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" 
+            integrity="sha384-JnYWOFVkPE8ojYz4/wKpzZFEp8ZhxJHqeYtqm7uc4BwyLEO6Zr" 
+            crossorigin="anonymous"></script>
+
+    <script src="/js/auth.js" defer></script>
+    <script src="/js/main.js" defer></script>
+    <script src="/js/email.js" defer></script>
+    
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="css/clerk.css" as="clerk">
+    <link rel="preload" href="js/main.js" as="script">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1>File Sharing Portal</h1>
+            <button id="xyloMailBtn" class="xylo-mail-btn mobile-hide" aria-label="Open XyloMail">
+                <span class="mail-icon">✉</span>
+                <span class="btn-text">Xylo-Mail</span>
+                <div class="btn-glow"></div>
+            </button>
+            
+        </div>
+        
+        <!-- Clerk User Profile -->
+        <div class="user-profile-container">
+            <div id="user-button"></div>
+        </div>
+
+        <div class="room-info">
+            <div class="room-code-container">
+                <span>Room Code: </span>
+                <span id="currentRoomCode" class="copyable" onclick="copyRoomCode()">Loading...</span>
+            </div>
+            <span class="room-owner">Owner: <span id="roomOwner">Loading...</span></span>
+        </div>
+
+    </header>
+
+    <div class="container" id="mainContainer">
+        <div class="file-upload-container">
+            <div id="uploadWrapper">
+                
+                <button class="upload-button" id="uploadBtn">+</button>
+            </div>
+        </div>
+        <div class="file-display-container" id="fileDisplay">
+            <!-- Uploaded files will be displayed here -->
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" style="display: none;" multiple>
+    <div id="file-container"></div>
+
+    <footer>
+        <div class="footer-container">
+            <p>
+                <span> 2025</span>
+                <span class="footer-separator"></span>
+                <span>Made by</span>
+                <a href="/homepage" onclick="handleClick()">Vedantterse</a>
+            </p>
+            <div class="footer-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 22C6.48 22 2 17.52 2 12 2 6.48 6.48 2 12 2c5.52 0 10 4.48 10 10 0 5.52-4.48 10-10 10zm-2-9v4H8v-4H4l6-6 6 6h-4v4h-2z"/>
+                </svg>
+            </div>
+        </div>
+    </footer>
+
+    <!-- XyloMail Popup Container -->
+    <div id="xyloMailPopup" class="xylomail-popup">
+        <div class="xylomail-content">
+            <div class="xylomail-header">
+                <div class="header-left">
+                    <div class="logo-wrapper">
+                        <span class="logo-icon">✉</span>
+                    </div>
+                    <h2>Xylo Mail</h2>
+                </div>
+                <button class="close-btn" id="closeXyloMail">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="xylomail-body">
+                <form id="xyloMailForm" class="glass-form" enctype="multipart/form-data">
+                    <div class="input-group email-chips-container">
+                        <div class="input-icon">@</div>
+                        <div class="email-chips">
+                            <div class="chips-wrapper"></div>
+                            <input type="email" id="receiverEmail" name="email" placeholder="Recipients" autocomplete="off">
+                        </div>
+                        <div class="input-glow"></div>
+                        <div class="recipient-limit-alert">Maximum recipients reached</div>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-icon">✍</div>
+                        <textarea id="mailMessage" required placeholder="Your Message" rows="4" maxlength="250"></textarea>
+                        <div class="input-glow"></div>
+                        <div class="char-counter">0/250</div>
+                    </div>
+                    <div class="file-input-group">
+                        <label for="mailFileInput" class="file-label">
+                            <div class="file-label-content">
+                                <svg class="file-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                    <polyline points="13 2 13 9 20 9"></polyline>
+                                </svg>
+                                <span>Choose Files</span>
+                            </div>
+                            <div class="file-label-glow"></div>
+                        </label>
+                        <input type="file" id="mailFileInput" class="mail-file-input" multiple>
+                        <div class="selected-file glass-effect">
+                            <span class="file-text">No files chosen</span>
+                        </div>
+                        <!-- Size limit notification -->
+                        <div class="size-limit-alert">
+                            <span>⚠️ Total size exceeds 4.5MB limit</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <div class="btn-content">
+                            <span>Send Mail</span>
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="progress-status">
+                            <span class="progress-text">Sending</span>
+                            <div class="progress-dots">
+                                <div class="progress-dot"></div>
+                                <div class="progress-dot"></div>
+                                <div class="progress-dot"></div>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar"></div>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div class="status-message success">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M20 6L9 17l-5-5" stroke-width="2"></path>
+        </svg>
+        <span>Mail sent successfully!</span>
+    </div>
+    <div class="status-message error">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+            <path d="M15 9l-6 6M9 9l6 6" stroke-width="2"></path>
+        </svg>
+        <span>Failed to send mail</span>
+    </div>
+
+    <!-- Remove or comment out this line -->
+    <!-- <script>document.addEventListener('DOMContentLoaded', authManager.initialize);</script> -->
+    <script>
+// Create sparkles
+function createSparkles() {
+    const container = document.body;
+    for (let i = 0; i < 30; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        sparkle.style.setProperty('--duration', `${2 + Math.random() * 3}s`);
+        sparkle.style.setProperty('--delay', `${Math.random() * 2}s`);
+        sparkle.style.left = `${Math.random() * 100}%`;
+        sparkle.style.top = `${Math.random() * 100}%`;
+        container.appendChild(sparkle);
+    }
+}
+createSparkles();
+
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const roomData = JSON.parse(localStorage.getItem('currentRoom'));
+        if (!roomData) {
+            window.location.href = '/';
+            return;
+        }
+
+        // Update room info
+        document.getElementById('currentRoomCode').textContent = roomData.roomCode;
+        document.getElementById('roomOwner').textContent = roomData.owner;
+
+        // Set the current folder path for file operations
+        window.currentFolderPath = roomData.folderPath;
+
+        // Fetch initial files
+        await fetchFiles();
+    } catch (error) {
+        console.error('Error initializing room:', error);
+        alert('Error loading room');
+        window.location.href = '/';
+    }
+});
+
+// Update fetchFiles function to use room folder path
+async function fetchFiles() {
+    try {
+        const roomData = JSON.parse(localStorage.getItem('currentRoom'));
+        if (!roomData?.folderPath) {
+            throw new Error('No active room');
+        }
+
+        const response = await fetch(`/api/files/${roomData.folderPath}`, {
+            headers: {
+                'Authorization': `Bearer ${await getAuthToken()}`
+            }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            displayFiles(data.files);
+        }
+    } catch (error) {
+        console.error('Error fetching files:', error);
+    }
+}
+
+document.addEventListener('clerkReady', async () => {
+    if (window.location.pathname === '/homepage') {
+        try {
+            if (!window.clerkInstance?.user) {
+                window.location.href = '/';
+                return;
+            }
+            await updateRoomInfo();
+            await fetchFiles();
+        } catch (error) {
+            console.error('Error initializing homepage:', error);
+            window.location.href = '/';
+        }
+    }
+});
+
+function copyRoomCode() {
+    const roomCode = document.getElementById('currentRoomCode').textContent;
+    navigator.clipboard.writeText(roomCode);
+}
+</script>
+
+<style>
+.room-info {
+    position: fixed;
+    top: 20px;
+    left: 80px;
+    background: rgba(23, 32, 42, 0.95);
+    padding: 8px 15px;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    z-index: 1000;
+}
+
+.room-code-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.copyable {
+    color: #3498db;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.copyable:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+}
+</style>
+</body>
+</html>
