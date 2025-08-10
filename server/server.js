@@ -21,6 +21,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { emailServerHandler } from './email-server.js';
 import { createClient } from '@supabase/supabase-js';
 import { RoomManager } from './room.js';
+import session from 'express-session';
+import MemoryStore from 'memorystore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,6 +67,22 @@ initializeStorage();
 
 const app = express();
 const httpServer = createServer(app);
+
+// Session Configuration
+const MStore = MemoryStore(session);
+app.use(session({
+    store: new MStore({
+        checkPeriod: 86400000 // Prune expired entries every 24h
+    }),
+    secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key-that-is-long-and-random',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 365 * 24 * 60 * 60 * 1000, // Persist session for 1 year
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true
+    }
+}));
 
 // Basic CORS configuration
 app.use((req, res, next) => {
@@ -139,80 +157,146 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Update authMiddleware to be more permissive during development
-async function authMiddleware(req, res, next) {
-    try {
-        // Skip auth check for development if enabled
-        if (process.env.SKIP_AUTH === 'true') {
-            return next();
-        }
-
-        // Check for authenticated cookie first
-        if (req.cookies.authenticated === 'true') {
-            return next();
-        }
-
-        const token = req.headers.authorization?.split(' ')[1];
-        
-        // For page requests without token, redirect to index
-        if (!req.path.startsWith('/api/') && !token) {
-            return res.redirect('/');
-        }
-
-        // For API requests without token, return JSON error
-        if (req.path.startsWith('/api/') && !token) {
-            return res.status(401).json({ success: false, message: 'No token provided' });
-        }
-
-        // If we have a token, verify it
-        if (token) {
-            try {
-                const response = await fetch(`${process.env.CLERK_API_URL}/sessions/${token}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    return next();
-                }
-
-                // Token verification failed
-                if (req.path.startsWith('/api/')) {
-                    return res.status(401).json({ success: false, message: 'Invalid token' });
-                } else {
-                    return res.redirect('/');
-                }
-            } catch (error) {
-                console.error('Token verification error:', error);
-                if (req.path.startsWith('/api/')) {
-                    return res.status(500).json({ success: false, message: 'Authentication error' });
-                } else {
-                    return res.redirect('/');
-                }
-            }
-        }
-
-        // If we get here with no token, redirect or return error
-        if (req.path.startsWith('/api/')) {
-            return res.status(401).json({ success: false, message: 'Authentication required' });
-        } else {
-            return res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Auth error:', error);
-        if (req.path.startsWith('/api/')) {
-            return res.status(500).json({ success: false, message: 'Authentication error' });
-        } else {
-            return res.redirect('/');
-        }
-    }
+// Small helper for consistent cookie options
+function setIdentityCookies(res, { userId, username }) {
+    const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+    const cookieOpts = {
+        maxAge: oneYearMs,
+        httpOnly: false,          // allow client-side read if ever needed
+        sameSite: 'Lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/'
+    };
+    res.cookie('xy_user_id', userId, cookieOpts);
+    res.cookie('xy_username', username, cookieOpts);
 }
 
-// Update route middleware to only check authentication
-app.use(['/homepage', '/fetch-files', '/upload', '/delete', '/download'], authMiddleware);
+// Session-based Authentication Middleware
+async function authMiddleware(req, res, next) {
+    if (req.session && req.session.user) {
+        return next();
+    }
+    // Try to seed session from cookies
+    const cookieUserId = req.cookies.xy_user_id;
+    const cookieUsername = req.cookies.xy_username;
+    if (cookieUserId) {
+        req.session.user = { userId: cookieUserId, username: cookieUsername || `User${Math.floor(1000 + Math.random() * 9000)}` };
+        return req.session.save(err => {
+            if (err) {
+                console.error('Session save error (seed from cookies):', err);
+                return res.status(500).json({ success: false, message: 'Could not create session.' });
+            }
+            next();
+        });
+    }
+
+    // Create anonymous user session once and persist in cookie
+    const randomWords = ["Cosmic", "Stellar", "Quantum", "Astro", "Nova", "Cyber", "Tech", "Future"];
+    const randomName = `${randomWords[Math.floor(Math.random() * randomWords.length)]}${Math.floor(1000 + Math.random() * 9000)}`;
+    const userId = uuidv4();
+    req.session.user = { userId, username: randomName };
+    req.session.save(err => {
+        if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ success: false, message: 'Could not create session.' });
+        }
+        setIdentityCookies(res, { userId, username: randomName });
+        next();
+    });
+}
+
+// Session endpoint
+app.get('/api/session', (req, res) => {
+    // If session already exists
+    if (req.session && req.session.user) {
+        return res.json({
+            success: true,
+            authenticated: true,
+            username: req.session.user.username,
+            userId: req.session.user.userId
+        });
+    }
+
+    // Seed from cookies if available
+    const cookieUserId = req.cookies.xy_user_id;
+    const cookieUsername = req.cookies.xy_username;
+    if (cookieUserId) {
+        req.session.user = {
+            userId: cookieUserId,
+            username: cookieUsername || `User${Math.floor(1000 + Math.random() * 9000)}`
+        };
+        return req.session.save(err => {
+            if (err) {
+                return res.status(500).json({ success: false, authenticated: false });
+            }
+            return res.json({
+                success: true,
+                authenticated: true,
+                username: req.session.user.username,
+                userId: req.session.user.userId
+            });
+        });
+    }
+
+    // Function to generate a cool random username
+    function generateUsername() {
+        const adjectives = [
+            "Cosmic", "Stellar", "Quantum", "Astro", "Nova", "Cyber", "Tech", "Future",
+            "Lunar", "Solar", "Nebula", "Eclipse", "Galactic", "Hyper", "Neon", "Retro",
+            "Pixel", "Shadow", "Alpha", "Omega", "Binary", "Virtual", "Meta", "Warp",
+            "Turbo", "Nano", "Core", "Vortex", "Asteroid", "Orbit", "Zenith", "Pulse",
+            "Matrix", "Cybernetic", "Spectral", "Infra", "Ultra", "Prism", "Flux", "Drift"
+        ];
+
+        const nouns = [
+            "Rider", "Hunter", "Walker", "Runner", "Pilot", "Hacker", "Bot", "Agent",
+            "Guardian", "Seeker", "Breaker", "Forge", "Storm", "Light", "Blaze", "Cipher",
+            "Blade", "Drone", "Nova", "Shadow", "Sentinel", "Star", "Flux", "Core",
+            "Pulse", "Phantom", "Wave", "Vortex", "Orbit", "Astro", "Nebula", "Comet",
+            "Rocket", "Phoenix", "Galaxy", "Specter", "Rogue", "Titan", "Quantum"
+        ];
+
+        const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const noun = nouns[Math.floor(Math.random() * nouns.length)];
+        const number = Math.floor(1000 + Math.random() * 9000);
+        return `${adj}${noun}${number}`;
+    }
+
+    // Create a new identity (first visit)
+    const randomName = generateUsername();
+    const userId = uuidv4();
+
+    req.session.user = { userId, username: randomName };
+    req.session.save(err => {
+        if (err) {
+            return res.status(500).json({ success: false, authenticated: false });
+        }
+        setIdentityCookies(res, { userId, username: randomName });
+        res.json({
+            success: true,
+            authenticated: true,
+            username: req.session.user.username,
+            userId: req.session.user.userId
+        });
+    });
+});
+
+// Apply auth middleware to protected routes
+app.use(
+    [
+        '/homepage',
+        // '/fetch-files', // removed
+        '/upload',
+        '/delete',
+        '/download',
+        '/api/rooms/user',
+        '/api/room/create',
+        '/api/room/join',
+        '/api/room/:code',
+        '/api/files/:folderPath(*)'
+    ],
+    authMiddleware
+);
 
 // Serve the maintenance page
 
@@ -226,12 +310,9 @@ app.use((req, res, next) => {
 });
 
 // Then your existing routes
-app.get('/', async (req, res) => {
-    if (req.cookies.authenticated === 'true') {
-        res.redirect('/homepage');
-    } else {
-        res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-    }
+app.get('/', (req, res) => {
+    // Always serve the index page - let users choose rooms from there
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 app.get('/homepage', (req, res) => {
@@ -240,38 +321,6 @@ app.get('/homepage', (req, res) => {
 
 // Create a single instance of RoomManager
 const roomManager = new RoomManager(supabase);
-
-// Fetch existing files from Supabase Storage with pagination
-app.get('/fetch-files', authMiddleware, async (req, res) => {
-    const folder = req.query.folder || '';
-    try {
-        const { data: files, error } = await supabase.storage
-            .from('uploads')
-            .list(folder, {
-                sortBy: { column: 'created_at', order: 'desc' }
-            });
-
-        if (error) throw error;
-
-        if (!files) {
-            return res.json({ success: true, files: [] });
-        }
-
-        const fileList = files
-            .filter(file => file.name !== '.folder')
-            .map(file => ({
-                fileName: `${folder}/${file.name}`,
-                size: file.metadata?.size || 0,
-                contentType: file.metadata?.mimetype || 'application/octet-stream',
-                timeCreated: file.created_at || new Date().toISOString()
-            }));
-
-        res.json({ success: true, files: fileList });
-    } catch (error) {
-        console.error('Error fetching files:', error);
-        res.status(500).json({ success: false, message: 'Error fetching files: ' + error.message });
-    }
-});
 
 // Handle file uploads
 app.post('/upload', [authMiddleware, upload.single('file')], async (req, res) => {
@@ -344,15 +393,15 @@ app.post('/upload', [authMiddleware, upload.single('file')], async (req, res) =>
     }
 });
 
-// Check authentication status
-app.get('/check-auth', (req, res) => {
-    res.json({ authenticated: !!req.cookies.authenticated });
-});
-
-// Add a logout route
+// Logout Route
 app.get('/logout', (req, res) => {
-    res.clearCookie('authenticated');
-    res.redirect('/');
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).send('Could not log out.');
+        }
+        res.clearCookie('connect.sid');
+        res.redirect('/');
+    });
 });
 
 
@@ -377,12 +426,11 @@ app.use('/send-email', (req, res, next) => {
 
 app.post('/send-email', emailUpload.array('files'), emailServerHandler);
 
-// Room management routes
-app.get('/api/rooms/user/:username', authMiddleware, async (req, res) => {
+// Room management routes - use session (no username in path)
+app.get('/api/rooms/user', authMiddleware, async (req, res) => {
     try {
-        const username = req.params.username;
-        const rooms = await roomManager.getUserRooms(username);
-        console.log('Sending rooms for user:', username, rooms);
+        const userId = req.session.user.userId;
+        const rooms = await roomManager.getUserRooms(userId);
         res.json({ success: true, rooms });
     } catch (error) {
         console.error('Error getting user rooms:', error);
@@ -392,13 +440,10 @@ app.get('/api/rooms/user/:username', authMiddleware, async (req, res) => {
 
 app.post('/api/room/create', authMiddleware, async (req, res) => {
     try {
-        const username = req.headers['x-user-id'];
-        if (!username) {
-            throw new Error('Username is required');
-        }
-
-        const roomData = await roomManager.createRoom(username);
-        console.log('Created room:', roomData); // Debug log
+        const { username, userId } = req.session.user;
+        if (!username || !userId) throw new Error('User identifier not found in session');
+        const roomData = await roomManager.createRoom(username, userId);
+        // roomManager.createRoom returns { success, roomCode, folderPath, owner }
         res.json(roomData);
     } catch (error) {
         console.error('Error creating room:', error);
@@ -409,10 +454,9 @@ app.post('/api/room/create', authMiddleware, async (req, res) => {
 app.get('/api/room/join/:code', authMiddleware, async (req, res) => {
     try {
         const roomCode = req.params.code;
-        console.log('Joining room:', roomCode); // Debug log
         const result = await roomManager.joinRoom(roomCode);
-        console.log('Join result:', result); // Debug log
-        res.json(result);
+        // result includes owner username from .meta.json
+        res.json({ success: true, ...result });
     } catch (error) {
         console.error('Error joining room:', error);
         res.status(500).json({ success: false, message: error.message });
@@ -420,46 +464,27 @@ app.get('/api/room/join/:code', authMiddleware, async (req, res) => {
 });
 
 // Update the delete room endpoint
-app.delete('/api/room/:code', authMiddleware, async (req, res) => {
+app.delete('/api/room/:code', async (req, res) => {
     try {
         const roomCode = req.params.code;
-        console.log('Deleting room:', roomCode);
+        const userId = req.session.user.userId;
+        const result = await roomManager.deleteRoom(roomCode, userId);
         
-        // Get room data before deletion
-        const { data, error } = await supabase.storage
-            .from('uploads')
-            .list('');
-
-        if (error) throw error;
-
-        const roomFolder = data.find(item => item.name.includes(`_${roomCode}`));
-        if (!roomFolder) {
-            return res.status(404).json({ success: false, message: 'Room not found' });
-        }
-
-        // Delete the room
-        const result = await roomManager.deleteRoom(roomCode);
-
         // Broadcast to all connected clients that the room is deleted
         io.emit('roomDeleted', { roomCode });
         
         res.json(result);
     } catch (error) {
         console.error('Error deleting room:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: error.message || 'Failed to delete room' 
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// Update file fetch endpoint
+// Update file fetch endpoint (unchanged signature)
 app.get('/api/files/:folderPath(*)', authMiddleware, async (req, res) => {
     try {
-        // Clean the folder path
         const folderPath = req.params.folderPath.replace(/^uploads\//, '');
-        console.log('Fetching files from clean path:', folderPath);
-
+        
         const { data, error } = await supabase.storage
             .from('uploads')
             .list(folderPath);
@@ -470,7 +495,6 @@ app.get('/api/files/:folderPath(*)', authMiddleware, async (req, res) => {
             return res.json({ success: true, files: [] });
         }
 
-        // Use clean paths in response
         const files = await Promise.all(
             data.filter(file => !file.name.startsWith('.'))
                 .map(async (file) => {
@@ -480,7 +504,7 @@ app.get('/api/files/:folderPath(*)', authMiddleware, async (req, res) => {
 
                     return {
                         name: file.name,
-                        path: `${folderPath}/${file.name}`, // Using clean path
+                        path: `${folderPath}/${file.name}`,
                         url: urlData.publicUrl,
                         type: file.metadata?.mimetype || 'application/octet-stream',
                         size: file.metadata?.size || 0
@@ -495,17 +519,18 @@ app.get('/api/files/:folderPath(*)', authMiddleware, async (req, res) => {
     }
 });
 
-// Simplify the delete endpoint - remove ownership check
+// Enforce owner-only deletion
 app.delete('/delete/:filePath(*)', authMiddleware, async (req, res) => {
     try {
-        // Clean the folder path by removing any 'uploads/' prefix
-        const filePath = req.params.filePath.replace(/^uploads\//, '');
-        console.log('Deleting file from path:', filePath);
+        // filePath may include uploads/ prefix, normalize
+        const raw = req.params.filePath.replace(/^uploads\//, '');
+        // ownerId is the prefix before first '_' in folder segment
+        const ownerId = raw.split('/')[0].split('_')[0];
+        if (ownerId !== req.session.user.userId) {
+            return res.status(403).json({ success: false, message: 'You are not the owner of this file.' });
+        }
 
-        const { error: deleteError } = await supabase.storage
-            .from('uploads')
-            .remove([filePath]);
-
+        const { error: deleteError } = await supabase.storage.from('uploads').remove([raw]);
         if (deleteError) throw deleteError;
 
         res.json({ success: true });

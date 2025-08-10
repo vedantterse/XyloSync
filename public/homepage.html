@@ -11,18 +11,15 @@
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/email.css">
-    <link rel="stylesheet" href="css/clerk.css">
     <title>XyloSync</title>
     <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" 
-            integrity="sha384-JnYWOFVkPE8ojYz4/wKpzZFEp8ZhxJHqeYtqm7uc4BwyLEO6Zr" 
+            integrity="sha384-JnYWOFVkPE8ojYz4/wKpzZFEp8ZhxJHqeYtqm7uc4BwyLEqVx6njLm0QQyZEO6Zr" 
             crossorigin="anonymous"></script>
 
-    <script src="/js/auth.js" defer></script>
     <script src="/js/main.js" defer></script>
     <script src="/js/email.js" defer></script>
     
     <link rel="preload" href="css/style.css" as="style">
-    <link rel="preload" href="css/clerk.css" as="clerk">
     <link rel="preload" href="js/main.js" as="script">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -178,8 +175,11 @@
         <span>Failed to send mail</span>
     </div>
 
-    <!-- Remove or comment out this line -->
-    <!-- <script>document.addEventListener('DOMContentLoaded', authManager.initialize);</script> -->
+    <!-- Hidden stubs to satisfy main.js bindings on homepage -->
+    <div id="joinRoomModal" style="display:none;"></div>
+    <input id="roomCodeInput" type="text" style="display:none;">
+    <button id="joinRoomBtn" style="display:none;"></button>
+
     <script>
 // Create sparkles
 function createSparkles() {
@@ -196,7 +196,6 @@ function createSparkles() {
 }
 createSparkles();
 
-
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const roomData = JSON.parse(localStorage.getItem('currentRoom'));
@@ -206,57 +205,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Update room info
-        document.getElementById('currentRoomCode').textContent = roomData.roomCode;
-        document.getElementById('roomOwner').textContent = roomData.owner;
+        const codeEl = document.getElementById('currentRoomCode');
+        const ownerEl = document.getElementById('roomOwner');
+        if (codeEl) codeEl.textContent = roomData.roomCode;
+        if (ownerEl) ownerEl.textContent = roomData.owner;
 
-        // Set the current folder path for file operations
-        window.currentFolderPath = roomData.folderPath;
-
-        // Fetch initial files
-        await fetchFiles();
+        // Do not call fetchFiles here; main.js initializeApp handles it
+        // if (typeof window.fetchFiles === 'function') {
+        //     await window.fetchFiles();
+        // }
     } catch (error) {
         console.error('Error initializing room:', error);
-        alert('Error loading room');
         window.location.href = '/';
-    }
-});
-
-// Update fetchFiles function to use room folder path
-async function fetchFiles() {
-    try {
-        const roomData = JSON.parse(localStorage.getItem('currentRoom'));
-        if (!roomData?.folderPath) {
-            throw new Error('No active room');
-        }
-
-        const response = await fetch(`/api/files/${roomData.folderPath}`, {
-            headers: {
-                'Authorization': `Bearer ${await getAuthToken()}`
-            }
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            displayFiles(data.files);
-        }
-    } catch (error) {
-        console.error('Error fetching files:', error);
-    }
-}
-
-document.addEventListener('clerkReady', async () => {
-    if (window.location.pathname === '/homepage') {
-        try {
-            if (!window.clerkInstance?.user) {
-                window.location.href = '/';
-                return;
-            }
-            await updateRoomInfo();
-            await fetchFiles();
-        } catch (error) {
-            console.error('Error initializing homepage:', error);
-            window.location.href = '/';
-        }
     }
 });
 
@@ -288,6 +248,46 @@ function copyRoomCode() {
 
 .copyable {
     color: #3498db;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.copyable:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* Ensure file containers can host the floating remove button */
+.file-container { position: relative; }
+
+/* Owner-only remove button styling (appears on hover) */
+.remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 16px;
+    line-height: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.file-container:hover .remove-btn { display: inline-flex; }
+</style>
+</body>
+</html>
+</style>
+</body>
+</html>
+</body>
+</html>
     font-weight: bold;
     padding: 2px 6px;
     border-radius: 4px;

@@ -3,140 +3,133 @@ export class RoomManager {
         this.supabase = supabase;
     }
 
-    async getUserRooms(username) {
+    async getUserRooms(userId) {
         try {
-            // List all folders in uploads
-            const { data, error } = await this.supabase.storage
-                .from('uploads')
-                .list('');
-
+            const { data, error } = await this.supabase.storage.from('uploads').list('');
             if (error) throw error;
 
-            // Filter and map folders that start with username_
-            const userRooms = data
-                .filter(item => item.name.startsWith(`${username}_`))
+            const userRooms = (data || [])
+                .filter(item => item.name.startsWith(`${userId}_`))
                 .map(item => {
-                    const roomCode = item.name.split('_')[1];
+                    const parts = item.name.split('_');
                     return {
-                        roomCode,
+                        roomCode: parts[1] || null,
                         folderPath: `uploads/${item.name}`,
-                        owner: username
                     };
-                });
+                })
+                .filter(room => room.roomCode);
 
-            console.log('Found rooms for user:', username, userRooms);
             return userRooms;
         } catch (error) {
             console.error('Error getting user rooms:', error);
-            throw error;
+            throw new Error('Failed to retrieve user rooms.');
         }
     }
 
-    async createRoom(username) {
+    async createRoom(username, userId) {
         try {
-            const existingRooms = await this.getUserRooms(username);
-            console.log('Existing rooms:', existingRooms.length);
-
-            if (existingRooms.length >= 5) {
-                throw new Error('Maximum room limit (5) reached');
+            // Enforce max 3 rooms per userId
+            const { data: all, error: listErr } = await this.supabase.storage.from('uploads').list('');
+            if (listErr) throw listErr;
+            const existing = (all || []).filter(it => it.name.startsWith(`${userId}_`));
+            if (existing.length >= 3) {
+                return { success: false, message: 'Maximum room limit (3) reached' };
             }
 
             const roomCode = Math.floor(10000 + Math.random() * 90000).toString();
-            const folderPath = `${username}_${roomCode}`;
+            const folderPath = `${userId}_${roomCode}`;
 
-            // Create folder with marker
-            const { error: folderError } = await this.supabase.storage
+            // Create a placeholder + metadata file for owner info
+            const { error: keepErr } = await this.supabase.storage
                 .from('uploads')
-                .upload(`${folderPath}/.folder`, new Uint8Array(0), {
-                    upsert: true
-                });
+                .upload(`${folderPath}/.keep`, new Uint8Array(0), { upsert: true });
+            if (keepErr) throw keepErr;
 
-            if (folderError) throw folderError;
+            const meta = Buffer.from(JSON.stringify({ ownerUserId: userId, ownerUsername: username }), 'utf8');
+            const { error: metaErr } = await this.supabase.storage
+                .from('uploads')
+                .upload(`${folderPath}/.meta.json`, meta, { upsert: true, contentType: 'application/json' });
+            if (metaErr) throw metaErr;
 
-            const roomData = {
+            return {
                 success: true,
                 roomCode,
                 folderPath: `uploads/${folderPath}`,
                 owner: username
             };
-
-            return roomData;
         } catch (error) {
             console.error('Error creating room:', error);
-            throw error;
+            throw new Error('Failed to create room.');
         }
     }
 
     async joinRoom(roomCode) {
         try {
-            const { data, error } = await this.supabase.storage
-                .from('uploads')
-                .list('');
-
+            const { data, error } = await this.supabase.storage.from('uploads').list('');
             if (error) throw error;
 
-            const roomFolder = data.find(item => item.name.includes(`_${roomCode}`));
+            const roomFolder = (data || []).find(item => item.name.endsWith(`_${roomCode}`));
             if (!roomFolder) {
                 throw new Error('Room not found');
             }
 
-            // Extract owner from folder name (username_roomcode)
-            const owner = roomFolder.name.split('_')[0];
-            
+            // Try to read owner username from .meta.json
+            let owner = roomFolder.name.split('_')[0]; // fallback to ownerUserId
+            try {
+                const { data: metaBlob } = await this.supabase.storage
+                    .from('uploads')
+                    .download(`${roomFolder.name}/.meta.json`);
+                if (metaBlob) {
+                    // Blob in Node has .text(); for safety, support Buffer fallback
+                    const text = typeof metaBlob.text === 'function'
+                        ? await metaBlob.text()
+                        : Buffer.from(await metaBlob.arrayBuffer()).toString('utf8');
+                    const parsed = JSON.parse(text);
+                    owner = parsed.ownerUsername || owner;
+                }
+            } catch {
+                // ignore meta read errors; fallback to ownerUserId
+            }
+
             return {
                 success: true,
                 roomCode,
                 folderPath: `uploads/${roomFolder.name}`,
-                owner: owner // Ensure owner is always included
+                owner
             };
         } catch (error) {
             console.error('Error joining room:', error);
-            throw error;
+            throw new Error('Failed to retrieve room details.');
         }
     }
 
-    async deleteRoom(roomCode) {
+    async deleteRoom(roomCode, userId) {
         try {
-            const { data, error } = await this.supabase.storage
-                .from('uploads')
-                .list('');
-
+            const { data, error } = await this.supabase.storage.from('uploads').list('');
             if (error) throw error;
 
-            // Find the room folder
-            const roomFolder = data.find(item => item.name.includes(`_${roomCode}`));
-            if (!roomFolder) {
-                throw new Error('Room not found');
+            const roomFolder = (data || []).find(item => item.name.endsWith(`_${roomCode}`));
+            if (!roomFolder) throw new Error('Room not found.');
+
+            // Authorization
+            if (!roomFolder.name.startsWith(`${userId}_`)) {
+                throw new Error('Unauthorized: You do not own this room.');
             }
 
-            // List all files in the room folder
-            const { data: files, error: listError } = await this.supabase.storage
-                .from('uploads')
-                .list(roomFolder.name);
-
+            // Delete all files within the folder
+            const { data: files, error: listError } = await this.supabase.storage.from('uploads').list(roomFolder.name);
             if (listError) throw listError;
 
-            // Delete all files in the folder first
             if (files && files.length > 0) {
                 const filePaths = files.map(file => `${roomFolder.name}/${file.name}`);
-                const { error: deleteFilesError } = await this.supabase.storage
-                    .from('uploads')
-                    .remove(filePaths);
-
+                const { error: deleteFilesError } = await this.supabase.storage.from('uploads').remove(filePaths);
                 if (deleteFilesError) throw deleteFilesError;
             }
 
-            // Finally delete the folder itself
-            const { error: deleteFolderError } = await this.supabase.storage
-                .from('uploads')
-                .remove([`${roomFolder.name}/.folder`]);
-
-            if (deleteFolderError) throw deleteFolderError;
-
-            return { success: true };
+            return { success: true, message: 'Room deleted successfully.' };
         } catch (error) {
             console.error('Error deleting room:', error);
-            throw error;
+            throw new Error('Failed to delete room.');
         }
     }
-} 
+}

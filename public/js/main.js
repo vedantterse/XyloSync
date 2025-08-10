@@ -1,3 +1,6 @@
+// Global variable to hold user info for the current page session
+let currentUser = null;
+let socket = null;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -9,6 +12,46 @@ if ('serviceWorker' in navigator) {
                 console.log('ServiceWorker registration failed:', err);
             });
     });
+}
+
+// Function to fetch session and initialize the page
+async function initializeApp() {
+    try {
+        // Prefer already-cached identity for instant UI consistency across tabs
+        const cached = localStorage.getItem('currentUser');
+        if (cached) {
+            try { currentUser = JSON.parse(cached); } catch { /* ignore parse errors */ }
+        }
+
+        const response = await fetch('/api/session', { credentials: 'include' });
+        const data = await response.json();
+        if (data.authenticated && data.username) {
+            currentUser = { username: data.username, userId: data.userId };
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            if (window.location.pathname.includes('homepage')) {
+                updateHomePageUI();
+                await fetchFiles();
+            }
+        } else {
+            window.location.href = '/';
+        }
+    } catch (error) {
+        console.error('Initialization failed:', error);
+        window.location.href = '/';
+    }
+}
+
+function updateHomePageUI() {
+    if (!currentUser) return;
+
+    const roomData = JSON.parse(localStorage.getItem('currentRoom'));
+    const roomCodeElement = document.getElementById('currentRoomCode');
+    const roomOwnerElement = document.getElementById('roomOwner');
+
+    if (roomData) {
+        if (roomCodeElement) roomCodeElement.textContent = roomData.roomCode;
+        if (roomOwnerElement) roomOwnerElement.textContent = roomData.owner;
+    }
 }
 
 // DOM elements
@@ -83,10 +126,51 @@ if (fileInput) {
 // Determine the Socket.IO server URL based on the environment
 const currentDomain = window.location.hostname;
 const socketURL = currentDomain === 'localhost' || currentDomain.includes('ngrok')
-    ? window.location.origin  // This will work for both localhost and ngrok
+    ? window.location.origin  
     : `https://${currentDomain}`;
 
 console.log('Connecting to Socket.IO server at:', socketURL);
+
+// Initialize WebSocket
+function initializeWebSocket() {
+    if (socket) return;
+    
+    try {
+        socket = io({
+            transports: ['websocket'],
+            upgrade: false,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            timeout: 10000
+        });
+        
+        socket.on('connect', () => {
+            console.log('WebSocket connected');
+            isConnected = true;
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+            isConnected = false;
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            isConnected = false;
+        });
+
+        socket.on('roomDeleted', ({ roomCode }) => {
+            const currentRoom = JSON.parse(localStorage.getItem('currentRoom'));
+            if (currentRoom?.roomCode === roomCode) {
+                localStorage.removeItem('currentRoom');
+                showNotification('Room was deleted', 'warning');
+                window.location.href = '/';
+            }
+        });
+    } catch (error) {
+        console.error('Socket initialization error:', error);
+    }
+}
 
 // Room Management System
 class RoomManagerUI {
@@ -96,18 +180,9 @@ class RoomManagerUI {
 
     async showRoomManager() {
         try {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-            if (!userInfo?.username) {
-                throw new Error('User not authenticated');
-            }
+            if (!currentUser?.userId) throw new Error('User not authenticated');
 
-            // Fetch current rooms
-            const response = await fetch(`/api/rooms/user/${userInfo.username}`, {
-                headers: {
-                    'Authorization': `Bearer ${await getAuthToken()}`
-                }
-            });
-
+            const response = await fetch('/api/rooms/user', { credentials: 'include' });
             const data = await response.json();
             if (!data.success) throw new Error(data.message);
 
@@ -118,7 +193,7 @@ class RoomManagerUI {
                 <div class="room-manager-modal">
                     <div class="room-manager-header">
                         <h2>Your Rooms</h2>
-                        <p>${data.rooms.length} of 5 rooms used</p>
+                        <p>${data.rooms.length} of 3 rooms used</p>
                     </div>
                     <div class="room-list">
                         ${data.rooms.length === 0 ? `
@@ -137,11 +212,11 @@ class RoomManagerUI {
                             </div>
                         `).join('')}
                     </div>
-                    ${data.rooms.length < 5 ? `
+                    ${data.rooms.length < 3 ? `
                         <button class="create-new-btn">Create New Room</button>
                     ` : `
                         <div class="limit-reached-message">
-                            Maximum room limit reached (5). Please delete a room to create a new one.
+                            Maximum room limit reached (3). Please delete a room to create a new one.
                         </div>
                     `}
                 </div>
@@ -177,27 +252,22 @@ class RoomManagerUI {
         if (createBtn) {
             createBtn.addEventListener('click', async () => {
                 try {
-                    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-                    if (!userInfo?.username) {
+                    if (!currentUser?.username) {
                         throw new Error('User not authenticated');
                     }
 
                     const response = await fetch('/api/room/create', {
                         method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${await getAuthToken()}`,
-                            'Content-Type': 'application/json',
-                            'X-User-ID': userInfo.username
-                        }
+                        credentials: 'include'
                     });
 
                     const data = await response.json();
                     if (!data.success) {
                         throw new Error(data.message);
                     }
-
                     modal.remove();
-                    await joinRoom(data.roomCode);
+                    localStorage.setItem('currentRoom', JSON.stringify(data));
+                    window.location.href = '/homepage';
                 } catch (error) {
                     console.error('Error creating room:', error);
                     showNotification(error.message, 'error');
@@ -233,16 +303,10 @@ class RoomManagerUI {
     }
 }
 
-// Create Room
-document.querySelector('.create-room').addEventListener('click', async () => {
-    if (!window.clerkInstance?.user) {
-        try {
-            await window.clerkInstance.openSignIn();
-        } catch (err) {
-            console.error('Error opening sign in:', err);
-            showNotification('Please sign in to create a room', 'error');
-        }
-        return;
+// Create Room - make sure this works on index page
+document.querySelector('.create-room')?.addEventListener('click', async () => {
+    if (!currentUser) {
+        await initializeApp();
     }
 
     try {
@@ -254,22 +318,17 @@ document.querySelector('.create-room').addEventListener('click', async () => {
     }
 });
 
-// Join Room
-document.querySelector('.join-room').addEventListener('click', async () => {
-    if (!window.clerkInstance?.user) {
-        try {
-            await window.clerkInstance.openSignIn();
-        } catch (err) {
-            console.error('Error opening sign in:', err);
-            showNotification('Please sign in to join a room', 'error');
-        }
-        return;
+// Join Room - works on index page with modal
+document.querySelector('.join-room')?.addEventListener('click', async () => {
+    if (!currentUser) {
+        await initializeApp();
     }
 
     const modal = document.getElementById('joinRoomModal');
-    modal.style.display = 'block';
-    // Add active class after a small delay to trigger animation
-    requestAnimationFrame(() => modal.classList.add('active'));
+    if (modal) {
+        modal.style.display = 'block';
+        requestAnimationFrame(() => modal.classList.add('active'));
+    }
 });
 
 // Close modal
@@ -286,14 +345,8 @@ const handleJoinRoom = async (event) => {
     
     event.preventDefault();
     try {
-        if (!window.clerkInstance?.user) {
-            try {
-                await window.clerkInstance.openSignIn();
-            } catch (err) {
-                console.error('Error opening sign in:', err);
-                showNotification('Please sign in to join a room', 'error');
-            }
-            return;
+        if (!currentUser) {
+            await initializeApp();
         }
 
         const code = document.getElementById('roomCodeInput').value.trim();
@@ -390,98 +443,58 @@ function initializeWebSocket() {
 // Add better connection state logging
 let isConnected = false;
 
-socket.on('connect', () => {
-    console.log('Connected to server:', socketURL);
-    isConnected = true;
-    checkXyloMailState(); // Check XyloMail state on connect
-});
+// Guard these listeners so homepage doesn't crash before socket is initialized
+if (socket && typeof socket.on === 'function') {
+    socket.on('connect', () => {
+        console.log('Connected to server:', socketURL);
+        isConnected = true;
+        checkXyloMailState && checkXyloMailState();
+    });
 
-socket.on('connect_error', (error) => {
-    console.log('Connection error to', socketURL, ':', error.message);
-    isConnected = false;
-});
+    socket.on('connect_error', (error) => {
+        console.log('Connection error to', socketURL, ':', error.message);
+        isConnected = false;
+    });
 
-socket.on('disconnect', () => {
-    console.log('Disconnected from server:', socketURL);
-    isConnected = false;
-});
+    socket.on('disconnect', () => {
+        console.log('Disconnected from server:', socketURL);
+        isConnected = false;
+    });
+}
 
 // Remove any click event listeners that might have been added before
-uploadBtn.replaceWith(uploadBtn.cloneNode(true));
-
-// Get the new button reference after cloning
-const newUploadBtn = document.getElementById('uploadBtn');
-
-// Single click handler for the upload button
-newUploadBtn.addEventListener('click', async (e) => {
-    e.preventDefault(); // Prevent any default behavior
-    e.stopPropagation(); // Stop event bubbling
-    
-    const permissions = await checkPermissions();
-    if (!permissions.includes('upload')) {
-        alert('Access denied for file upload');
-        return;
+if (uploadBtn) {
+    const clonedBtn = uploadBtn.cloneNode(true);
+    if (uploadBtn.parentNode) {
+        uploadBtn.parentNode.replaceChild(clonedBtn, uploadBtn);
     }
-    
-    fileInput.click();
-});
-
-// Single change handler for file input
-fileInput.addEventListener('change', async (event) => {
-    event.preventDefault();
-    const files = event.target.files;
-    if (files.length > 0) {
-        await handleFiles(files);
-        fileInput.value = ''; // Clear the input after handling files
-    }
-});
-
-// Function to check if user is authenticated
-async function checkAuth() {
-    try {
-        const response = await fetch('/check-auth', {
-            credentials: 'include'
+    // Get the new button reference after cloning
+    const newUploadBtn = document.getElementById('uploadBtn');
+    if (newUploadBtn) {
+        // Single click handler for the upload button
+        newUploadBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const permissions = await checkPermissions();
+            if (!permissions.includes('upload')) {
+                alert('Access denied for file upload');
+                return;
+            }
+            if (fileInput) fileInput.click();
         });
-        const data = await response.json();
-        return data.authenticated;
-    } catch (error) {
-        console.error('Error checking auth:', error);
-        return false;
     }
 }
 
+
 // Function to check user's permissions
 async function checkPermissions() {
-    try {
-        if (window.clerkInstance && await window.clerkInstance.user) {
-            return ['fetch', 'download', 'upload', 'delete']; // Give all permissions to authenticated users
-        }
-        return [];
-    } catch (error) {
-        console.error('Error checking permissions:', error);
-        return [];
-    }
+    return ['fetch', 'download', 'upload', 'delete'];
 }
 
 // Function to get active session token
 async function getAuthToken() {
-    try {
-        await waitForClerkInit();
-        
-        if (!window.clerkInstance?.user) {
-            throw new Error('User not authenticated');
-        }
-        
-        const session = await window.clerkInstance.session;
-        if (!session) {
-            throw new Error('No active session');
-        }
-        
-        return session.getToken();
-    } catch (error) {
-        console.error('Error getting auth token:', error);
-        throw error;
-    }
+    return 'session-based-token';
 }
 
 // Update uploadFile function to check room existence
@@ -532,16 +545,15 @@ async function displayFile(file, url, fileName) {
     try {
         // Get current room data and user info
         const roomData = JSON.parse(localStorage.getItem('currentRoom'));
-        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-        
-        if (!roomData || !userInfo) {
-            console.error('Missing room or user data');
+        if (!roomData || !currentUser) return;
+
+        // Skip if this file is already rendered (prevents temporary duplicates)
+        if (document.querySelector(`.file-container[data-filename="${fileName}"]`)) {
             return;
         }
 
-        // Get room owner from the folder path
-        const roomOwner = roomData.folderPath.split('/')[1].split('_')[0];
-        const isOwner = userInfo.username === roomOwner;
+        const ownerId = roomData.folderPath.split('/')[1].split('_')[0];
+        const isOwner = currentUser.userId === ownerId;
 
         const fileContainer = document.createElement('div');
         fileContainer.className = 'file-container';
@@ -637,9 +649,17 @@ function getFileTypeFromName(fileName) {
             return 'application/octet-stream';
     }
 }
+
 // Function to fetch and display files on page load
+let __filesFetchInProgress = false;
 async function fetchFiles() {
     try {
+        if (__filesFetchInProgress) {
+            console.debug('fetchFiles: already in progress, skipped');
+            return false;
+        }
+        __filesFetchInProgress = true;
+
         const roomData = JSON.parse(localStorage.getItem('currentRoom'));
         if (!roomData?.folderPath) {
             throw new Error('No active room');
@@ -694,52 +714,18 @@ async function fetchFiles() {
         console.error('Error fetching files:', error);
         showNotification(error.message, 'error');
         return false;
+    } finally {
+        __filesFetchInProgress = false;
     }
 }
-
-// Add file upload handler
-if (uploadBtn && fileInput) {
-    // Remove existing listeners
-    const newUploadBtn = uploadBtn.cloneNode(true);
-    const newFileInput = fileInput.cloneNode(true);
-    uploadBtn.parentNode.replaceChild(newUploadBtn, uploadBtn);
-    fileInput.parentNode.replaceChild(newFileInput, fileInput);
-
-    // Simple click handler for upload button
-    newUploadBtn.addEventListener('click', async () => {
-        const roomData = JSON.parse(localStorage.getItem('currentRoom'));
-        if (!roomData?.folderPath) {
-            showNotification('Please join or create a room first', 'error');
-            return;
-        }
-        newFileInput.click();
-    });
-
-    // Handle file selection
-    newFileInput.addEventListener('change', async (event) => {
-        const files = event.target.files;
-        if (files.length > 0) {
-            await handleFiles(files);
-            newFileInput.value = ''; // Clear the input after handling files
-        }
-    });
-}
-
 // Add delete file function
 async function deleteFile(fileName) {
     try {
         const roomData = JSON.parse(localStorage.getItem('currentRoom'));
-        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-        
-        if (!roomData || !userInfo) {
-            throw new Error('Missing room or user data');
-        }
+        if (!roomData || !currentUser) throw new Error('Missing room or user data');
 
-        // Get room owner from folder path
-        const roomOwner = roomData.folderPath.split('/')[1].split('_')[0];
-        
-        // Verify ownership
-        if (userInfo.username !== roomOwner) {
+        const ownerId = roomData.folderPath.split('/')[1].split('_')[0]; // userId prefix
+        if (currentUser.userId !== ownerId) {
             throw new Error('Only room owner can delete files');
         }
 
@@ -748,25 +734,16 @@ async function deleteFile(fileName) {
 
         const response = await fetch(`/delete/${encodeURIComponent(roomData.folderPath + '/' + fileName)}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${await getAuthToken()}`
-            }
+            headers: { 'Authorization': `Bearer ${await getAuthToken()}` }
         });
+        if (!response.ok) throw new Error('Failed to delete file');
 
-        if (!response.ok) {
-            throw new Error('Failed to delete file');
-        }
-
-        // Find and remove the file container directly
         const fileContainer = document.querySelector(`.file-container[data-filename="${fileName}"]`);
         if (fileContainer) {
             fileContainer.style.opacity = '0';
             fileContainer.style.transform = 'translateX(20px)';
-            setTimeout(() => {
-                fileContainer.remove();
-            }, 300);
+            setTimeout(() => fileContainer.remove(), 300);
         }
-        
         showNotification('File deleted successfully', 'success');
     } catch (error) {
         console.error('Error deleting file:', error);
@@ -777,26 +754,24 @@ async function deleteFile(fileName) {
 // Function to check authentication status
 async function checkAuth() {
     try {
-        const response = await fetch('/check-auth', {
-            credentials: 'include'
-        });
+        // Use session endpoint; returns { authenticated: true/false }
+        const response = await fetch('/api/session', { credentials: 'include' });
         const data = await response.json();
-        if (!data.authenticated) {
-            window.location.href = '/';
-        }
+        return !!data.authenticated;
     } catch (error) {
         console.error('Error checking auth:', error);
-        window.location.href = '/';
+        // Do not force logout on transient network issues
+        return true;
     }
 }
 
-// Check authentication every minute
-setInterval(checkAuth, 2*60*1000);
+// Check authentication every 45 minutes
+setInterval(checkAuth, 45 * 60 * 1000);
 
-// Set a timeout to redirect after 6 minutes
+// Set a timeout to redirect after 45 minutes (was 6 minutes)
 setTimeout(() => {
     window.location.href = '/';
-}, 6 * 60 * 1000);
+}, 45 * 60 * 1000);
 
 // Update the owner-specific styles
 const ownerStyles = document.createElement('style');
@@ -818,29 +793,13 @@ document.head.appendChild(ownerStyles);
 // Function to handle room joining
 async function joinRoom(roomCode) {
     try {
-        // Check if user is authenticated
-        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-        if (!userInfo?.username) {
-            // If not authenticated, prompt for sign in
-            await window.clerkInstance.openSignIn();
-            return;
-        }
-
-        const response = await fetch(`/api/room/join/${roomCode}`, {
-            headers: {
-                'Authorization': `Bearer ${await getAuthToken()}`
-            }
-        });
-
+        const response = await fetch(`/api/room/join/${roomCode}`, { credentials: 'include' });
         const data = await response.json();
         if (!data.success) {
             throw new Error(data.message || 'Failed to join room');
         }
-
-        localStorage.setItem('currentRoom', JSON.stringify(data));
+        localStorage.setItem('currentRoom', JSON.stringify(data)); // contains owner username
         window.location.href = '/homepage';
-        
-        return data;
     } catch (error) {
         console.error('Error joining room:', error);
         showNotification(error.message, 'error');
@@ -882,32 +841,14 @@ styles.textContent = `
 document.head.appendChild(styles);
 
 // Add this to initialize the page when it loads
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const roomData = JSON.parse(localStorage.getItem('currentRoom'));
-        if (roomData) {
-            // Update room info
-            const roomCodeElement = document.getElementById('currentRoomCode');
-            const roomOwnerElement = document.getElementById('roomOwner');
-            
-            if (roomCodeElement) roomCodeElement.textContent = roomData.roomCode;
-            if (roomOwnerElement) roomOwnerElement.textContent = roomData.owner;
+document.addEventListener('DOMContentLoaded', initializeApp);
 
-            // Fetch files
-            await fetchFiles();
-        }
-        
-        // Check for room deleted notification
-        if (localStorage.getItem('roomDeletedNotification')) {
-            showNotification('The room you were in has been deleted', 'error');
-            localStorage.removeItem('roomDeletedNotification');
-        }
-    } catch (error) {
-        console.error('Error initializing page:', error);
-    }
-});
 // Update the handleFiles function with parallel processing
 async function handleFiles(files) {
+    // Reentrancy guard to avoid accidental double-processing
+    if (window.__handlingFiles) return;
+    window.__handlingFiles = true;
+
     const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB in bytes
     const uploadQueue = [];
     const skippedFiles = [];
@@ -992,6 +933,9 @@ async function handleFiles(files) {
             progressContainer.style.opacity = '0';
             setTimeout(() => progressContainer.remove(), 300);
         }, 2000);
+
+        // Release guard
+        window.__handlingFiles = false;
     }
 }
 
@@ -1139,3 +1083,9 @@ async function downloadFile(url, fileName) {
 
     
 }
+
+// Initialize everything
+document.addEventListener('DOMContentLoaded', async () => {
+    await initializeApp();
+    setTimeout(initializeWebSocket, 1000);
+});
