@@ -243,8 +243,8 @@ body {
     left: 50%;
     transform: translate(-50%, -50%) scale(0.95);
     background: linear-gradient(145deg, 
-        rgba(23, 32, 42, 0.95), 
-        rgba(28, 40, 51, 0.95)
+        rgba(2, 33, 68, 0.486), 
+        rgba(28, 40, 51, 0)
     );
     padding: 2.5rem;
     border-radius: 20px;
@@ -276,7 +276,7 @@ body {
     font-weight: 600;
     margin: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    background: linear-gradient(to right, #3498db, #2980b9);
+    background: linear-gradient(to right, #c53c9c, #2980b9);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 0.5px;
@@ -288,7 +288,7 @@ body {
     top: -12px;
     width: 32px;
     height: 32px;
-    background: rgba(231, 76, 60, 0.95);
+    background: rgba(63, 1, 37, 0.95);
     border: none;
     border-radius: 50%;
     color: white;
@@ -303,7 +303,7 @@ body {
 }
 
 .close-btn:hover {
-    background: #e74c3c;
+    background: #851903;
     transform: rotate(90deg) scale(1.1);
     box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
 }
@@ -658,7 +658,7 @@ body {
 }
 
 .room-manager-modal {
-    background: rgba(23, 32, 42, 0.95);
+    background: rgba(0, 0, 0, 0.273);
     border: 1px solid rgba(52, 152, 219, 0.2);
     border-radius: 16px;
     padding: 2rem;
@@ -761,19 +761,19 @@ body {
 }
 
 .join-btn {
-    background: #3498db;
+    background: linear-gradient(135deg, #034543, #110732);
     color: white;
 }
 
 .join-btn:hover {
-    background: #2980b9;
+    background: linear-gradient(135deg, #0d1800, #022e10);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
 }
 
 .delete-btn {
     background: rgba(231, 76, 60, 0.1);
-    color: #e74c3c;
+    color: #8d3d05;
     border: 1px solid rgba(231, 76, 60, 0.3);
 }
 
@@ -786,7 +786,7 @@ body {
 .create-new-btn {
     width: 100%;
     padding: 1rem;
-    background: linear-gradient(135deg, #3498db, #2980b9);
+    background: linear-gradient(135deg, #034543, #110732);
     color: white;
     border: none;
     border-radius: 12px;

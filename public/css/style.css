@@ -206,7 +206,7 @@ h1 {
 }
 
 .upload-button {
-    background: linear-gradient(135deg, #f59e0b, #f97316);
+    background: linear-gradient(135deg, #231600, #f97316, #e0b05c);
     box-shadow: 
         0 4px 15px rgba(245, 158, 11, 0.2),
         0 2px 5px rgba(249, 115, 22, 0.1),
@@ -267,7 +267,7 @@ h1 {
 
 .upload-button:hover {
     transform: rotate(45deg) scale(1.1);
-    background: linear-gradient(135deg, #f97316, #ea580c);
+    background: linear-gradient(135deg, #4d0a01, #f97316, #e0b05c);
     box-shadow: 
         0 6px 20px rgba(245, 158, 11, 0.3),
         0 4px 8px rgba(249, 115, 22, 0.2),
