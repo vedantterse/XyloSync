@@ -150,6 +150,7 @@ app.set('io', io);
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json()); // Add JSON body parser for Notes API
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -293,7 +294,8 @@ app.use(
         '/api/room/create',
         '/api/room/join',
         '/api/room/:code',
-        '/api/files/:folderPath(*)'
+        '/api/files/:folderPath(*)',
+        '/api/notes/create'
     ],
     authMiddleware
 );
@@ -561,6 +563,102 @@ app.get('/download/:filePath(*)', authMiddleware, async (req, res) => {
         res.send(data);
     } catch (error) {
         console.error('Error downloading file:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Notes creation endpoint
+app.post('/api/notes/create', authMiddleware, async (req, res) => {
+    console.log('Notes create request received:', req.body); // Debug log
+    
+    try {
+        const { content, filename, folderPath } = req.body;
+        
+        if (!content || !filename || !folderPath) {
+            console.log('Missing required fields:', { content: !!content, filename: !!filename, folderPath: !!folderPath });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Content, filename, and folder path are required' 
+            });
+        }
+        
+        // Clean the folder path by removing any 'uploads/' prefix - same as regular upload
+        const cleanFolderPath = folderPath.replace(/^uploads\//, '');
+        
+        console.log('Clean folder path:', cleanFolderPath); // Debug log
+        
+        // Extract room code from folder path to verify room exists
+        // Format should be: userId_roomCode
+        const roomCode = cleanFolderPath.split('_')[1];
+        if (!roomCode) {
+            console.log('Invalid folder path format:', cleanFolderPath);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid folder path format' 
+            });
+        }
+        
+        console.log('Extracted room code:', roomCode); // Debug log
+        
+        // Check if room exists - same validation as regular upload
+        const { data: folders, error: listError } = await supabase.storage
+            .from('uploads')
+            .list('');
+
+        if (listError) {
+            console.error('Error listing folders:', listError);
+            throw listError;
+        }
+
+        const roomExists = folders.some(item => item.name.includes(`_${roomCode}`));
+        if (!roomExists) {
+            console.log('Room not found:', roomCode);
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Room not found or has been deleted',
+                redirect: '/homepage'
+            });
+        }
+        
+        console.log('Room exists, creating note file');
+        
+        // Create text file buffer - preserves formatting
+        const textBuffer = Buffer.from(content, 'utf8');
+        const fullFilePath = `${cleanFolderPath}/${filename}`;
+        
+        console.log('Uploading to path:', fullFilePath);
+        
+        // Upload the note file to Supabase - same as regular upload
+        const { data, error } = await supabase.storage
+            .from('uploads')
+            .upload(fullFilePath, textBuffer, {
+                contentType: 'text/plain',
+                upsert: true
+            });
+
+        if (error) {
+            console.error('Supabase upload error:', error);
+            throw error;
+        }
+
+        // Get public URL - same as regular upload
+        const { data: urlData } = supabase.storage
+            .from('uploads')
+            .getPublicUrl(fullFilePath);
+
+        const fileInfo = {
+            name: filename,
+            path: fullFilePath,
+            url: urlData.publicUrl,
+            type: 'text/plain',
+            size: textBuffer.length
+        };
+
+        console.log('Note file created successfully:', fileInfo);
+        res.json({ success: true, file: fileInfo });
+        
+    } catch (error) {
+        console.error('Error creating note:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
