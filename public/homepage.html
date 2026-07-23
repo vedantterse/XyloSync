@@ -13,13 +13,16 @@
     <link rel="stylesheet" href="css/email.css">
     <link rel="stylesheet" href="css/quicknotes.css">
     <title>XyloSync</title>
-    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" 
-            integrity="sha384-JnYWOFVkPE8ojYz4/wKpzZFEp8ZhxJHqeYtqm7uc4BwyLEqVx6njLm0QQyZEO6Zr" 
-            crossorigin="anonymous"></script>
+    <script
+    src="https://cdn.socket.io/4.8.0/socket.io.min.js"
+    integrity="sha384-OoIbkvzsFFQAG88r+IqMAjyOtYDPGO0cqK5HF5Uosdy/zUEGySeAzytENMDynREd"
+    crossorigin="anonymous">
+</script>
 
     <script src="/js/main.js" defer></script>
     <script src="/js/email.js" defer></script>
     <script src="/js/quicknotes.js" defer></script>
+    <script src="/js/chat.js" defer></script>
     
     <link rel="preload" href="css/style.css" as="style">
     <link rel="preload" href="js/main.js" as="script">
@@ -221,6 +224,34 @@
     <div id="joinRoomModal" style="display:none;"></div>
     <input id="roomCodeInput" type="text" style="display:none;">
     <button id="joinRoomBtn" style="display:none;"></button>
+
+    <!-- ── Chat FAB (floating action button, bottom-right) ──────── -->
+    <button id="chatToggleBtn" class="chat-fab" aria-label="Toggle Chat">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </button>
+
+    <!-- ── Chat Panel ─────────────────────────────────── -->
+    <div id="chatPanel" class="chat-panel" role="complementary" aria-label="Room Chat">
+        <div class="chat-panel__header">
+            <span class="chat-panel__title">💬 Room Chat</span>
+            <button id="chatCloseBtn" class="chat-panel__close" aria-label="Close chat">✕</button>
+        </div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div id="chatTyping" class="chat-typing" style="display:none;"></div>
+        <div class="chat-input-row">
+            <input
+                id="chatInput"
+                class="chat-input"
+                type="text"
+                placeholder="Type a message…"
+                maxlength="500"
+                autocomplete="off"
+            />
+            <button id="chatSendBtn" class="chat-send-btn" aria-label="Send">➤</button>
+        </div>
+    </div>
 
     <script>
 // Create sparkles

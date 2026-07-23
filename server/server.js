@@ -23,6 +23,7 @@ import { createClient } from '@supabase/supabase-js';
 import { RoomManager } from './room.js';
 import session from 'express-session';
 import MemoryStore from 'memorystore';
+import { initializeChat } from './chat.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -40,9 +41,9 @@ async function initializeStorage() {
         const { data: buckets } = await supabase
             .storage
             .listBuckets();
-        
+
         const uploadsBucket = buckets.find(b => b.name === 'uploads');
-        
+
         if (!uploadsBucket) {
             // Create uploads bucket if it doesn't exist
             const { data, error } = await supabase
@@ -51,11 +52,11 @@ async function initializeStorage() {
                     public: true,
                     fileSizeLimit: 4500000 // 4.5MB
                 });
-            
+
             if (error) throw error;
             console.log('Created uploads bucket');
         }
-        
+
         console.log('Storage initialized successfully');
     } catch (error) {
         console.error('Error initializing storage:', error);
@@ -70,19 +71,22 @@ const httpServer = createServer(app);
 
 // Session Configuration
 const MStore = MemoryStore(session);
-app.use(session({
+
+const sessionMiddleware = session({
     store: new MStore({
-        checkPeriod: 86400000 // Prune expired entries every 24h
+        checkPeriod: 86400000
     }),
     secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key-that-is-long-and-random',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 365 * 24 * 60 * 60 * 1000, // Persist session for 1 year
+        maxAge: 365 * 24 * 60 * 60 * 1000,
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true
     }
-}));
+});
+
+app.use(sessionMiddleware);
 
 // Basic CORS configuration
 app.use((req, res, next) => {
@@ -99,8 +103,8 @@ app.use((req, res, next) => {
 // Clerk configuration  
 app.get('/api/clerk-config', (req, res) => {
     if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.NEXT_PUBLIC_CLERK_FRONTEND_API) {
-        return res.status(500).json({ 
-            error: 'Clerk configuration not found in environment variables' 
+        return res.status(500).json({
+            error: 'Clerk configuration not found in environment variables'
         });
     }
     res.json({
@@ -112,28 +116,39 @@ app.get('/api/clerk-config', (req, res) => {
 // Initialize Socket.IO with basic configuration
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' 
-            ? 'https://xylosync.vercel.app' 
+        origin: process.env.NODE_ENV === 'production'
+            ? 'https://xylosync.vercel.app'
             : 'http://localhost:3000',
         methods: ['GET', 'POST']
     },
-    transports: ['websocket'],
+    transports: ['polling', 'websocket'],
     pingTimeout: 60000
 });
 
-// Add socket.io middleware for authentication
+// Share Express sessions with Socket.IO
 io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
-    if (!token) {
-        return next(new Error('Authentication error'));
-    }
-    // Add your token verification logic here if needed
-    next();
+    sessionMiddleware(socket.request, {}, next);
 });
 
+// Attach user identity to socket. Try session first, then fall back to
+// the handshake auth payload sent by the client after /api/session resolves.
+io.use((socket, next) => {
+    const req = socket.request;
+    if (req.session && req.session.user) {
+        socket.user = req.session.user;
+    } else {
+        const { userId, username } = socket.handshake.auth || {};
+        if (userId && username) {
+            socket.user = { userId, username };
+        }
+    }
+    return next();
+});
 // Handle socket connections
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
+
+    initializeChat(io, socket);
 
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
@@ -327,7 +342,7 @@ const roomManager = new RoomManager(supabase);
 // Handle file uploads
 app.post('/upload', [authMiddleware, upload.single('file')], async (req, res) => {
     console.log('Upload request received');
-    
+
     try {
         const file = req.file;
         // Clean the folder path by removing any 'uploads/' prefix
@@ -352,8 +367,8 @@ app.post('/upload', [authMiddleware, upload.single('file')], async (req, res) =>
 
         const roomExists = folders.some(item => item.name.includes(`_${roomCode}`));
         if (!roomExists) {
-            return res.status(404).json({ 
-                success: false, 
+            return res.status(404).json({
+                success: false,
                 message: 'Room not found or has been deleted',
                 redirect: '/homepage'
             });
@@ -419,8 +434,8 @@ const emailUpload = multer({
 app.use('/send-email', (req, res, next) => {
     const userAgent = req.headers['user-agent'];
     if (/iPhone|iPad|iPod|Android/i.test(userAgent)) {
-        return res.status(403).json({ 
-            error: 'Email service is not available on mobile devices' 
+        return res.status(403).json({
+            error: 'Email service is not available on mobile devices'
         });
     }
     next();
@@ -471,10 +486,10 @@ app.delete('/api/room/:code', async (req, res) => {
         const roomCode = req.params.code;
         const userId = req.session.user.userId;
         const result = await roomManager.deleteRoom(roomCode, userId);
-        
+
         // Broadcast to all connected clients that the room is deleted
         io.emit('roomDeleted', { roomCode });
-        
+
         res.json(result);
     } catch (error) {
         console.error('Error deleting room:', error);
@@ -486,7 +501,7 @@ app.delete('/api/room/:code', async (req, res) => {
 app.get('/api/files/:folderPath(*)', authMiddleware, async (req, res) => {
     try {
         const folderPath = req.params.folderPath.replace(/^uploads\//, '');
-        
+
         const { data, error } = await supabase.storage
             .from('uploads')
             .list(folderPath);
@@ -558,7 +573,7 @@ app.get('/download/:filePath(*)', authMiddleware, async (req, res) => {
         // Set appropriate headers for download
         res.setHeader('Content-Type', 'application/octet-stream');
         res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-        
+
         // Send the file data
         res.send(data);
     } catch (error) {
@@ -570,36 +585,36 @@ app.get('/download/:filePath(*)', authMiddleware, async (req, res) => {
 // Notes creation endpoint
 app.post('/api/notes/create', authMiddleware, async (req, res) => {
     console.log('Notes create request received:', req.body); // Debug log
-    
+
     try {
         const { content, filename, folderPath } = req.body;
-        
+
         if (!content || !filename || !folderPath) {
             console.log('Missing required fields:', { content: !!content, filename: !!filename, folderPath: !!folderPath });
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Content, filename, and folder path are required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Content, filename, and folder path are required'
             });
         }
-        
+
         // Clean the folder path by removing any 'uploads/' prefix - same as regular upload
         const cleanFolderPath = folderPath.replace(/^uploads\//, '');
-        
+
         console.log('Clean folder path:', cleanFolderPath); // Debug log
-        
+
         // Extract room code from folder path to verify room exists
         // Format should be: userId_roomCode
         const roomCode = cleanFolderPath.split('_')[1];
         if (!roomCode) {
             console.log('Invalid folder path format:', cleanFolderPath);
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid folder path format' 
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid folder path format'
             });
         }
-        
+
         console.log('Extracted room code:', roomCode); // Debug log
-        
+
         // Check if room exists - same validation as regular upload
         const { data: folders, error: listError } = await supabase.storage
             .from('uploads')
@@ -613,21 +628,21 @@ app.post('/api/notes/create', authMiddleware, async (req, res) => {
         const roomExists = folders.some(item => item.name.includes(`_${roomCode}`));
         if (!roomExists) {
             console.log('Room not found:', roomCode);
-            return res.status(404).json({ 
-                success: false, 
+            return res.status(404).json({
+                success: false,
                 message: 'Room not found or has been deleted',
                 redirect: '/homepage'
             });
         }
-        
+
         console.log('Room exists, creating note file');
-        
+
         // Create text file buffer - preserves formatting
         const textBuffer = Buffer.from(content, 'utf8');
         const fullFilePath = `${cleanFolderPath}/${filename}`;
-        
+
         console.log('Uploading to path:', fullFilePath);
-        
+
         // Upload the note file to Supabase - same as regular upload
         const { data, error } = await supabase.storage
             .from('uploads')
@@ -656,7 +671,7 @@ app.post('/api/notes/create', authMiddleware, async (req, res) => {
 
         console.log('Note file created successfully:', fileInfo);
         res.json({ success: true, file: fileInfo });
-        
+
     } catch (error) {
         console.error('Error creating note:', error);
         res.status(500).json({ success: false, message: error.message });
