@@ -27,7 +27,10 @@ async function initializeApp() {
         const data = await response.json();
         if (data.authenticated && data.username) {
             currentUser = { username: data.username, userId: data.userId };
+            window.currentUser = currentUser;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // Session cookie is now set — safe to open the WebSocket.
+            initializeWebSocket();
             if (window.location.pathname.includes('homepage')) {
                 updateHomePageUI();
                 await fetchFiles();
@@ -137,13 +140,15 @@ function initializeWebSocket() {
     
     try {
         socket = io({
-            transports: ['websocket'],
-            upgrade: false,
+            transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
             timeout: 10000
         });
-        
+        // Expose on window so chat.js (separate script) can reach the socket instance.
+        // let socket does NOT create a window property; this explicit assignment does.
+        window.socket = socket;
+
         socket.on('connect', () => {
             console.log('WebSocket connected');
             isConnected = true;
@@ -402,16 +407,40 @@ function initializeWebSocket() {
     
     try {
         socket = io({
-            transports: ['websocket'],
-            upgrade: false,
+            transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
-            timeout: 10000
+            timeout: 10000,
+            auth: {
+                userId: currentUser?.userId,
+                username: currentUser?.username
+            }
         });
-        
+        // Expose on window so chat.js (separate script) can reach the socket instance.
+        // let socket does NOT create a window property; this explicit assignment does.
+        window.socket = socket;
+
         socket.on('connect', () => {
             console.log('WebSocket connected');
+
+            // ===== CHAT =====
+            const roomData = JSON.parse(localStorage.getItem('currentRoom'));
+
+            if (roomData && currentUser) {
+                socket.emit('join-room', {
+                    roomCode: roomData.roomCode,
+                    username: currentUser.username
+                });
+            }
+            // ================
+
         });
+
+        // ===== CHAT =====
+        socket.on('joined-room', ({ roomCode }) => {
+            console.log(`[CHAT] Joined room ${roomCode}`);
+        });
+        // ================
 
         socket.on('connect_error', (error) => {
             console.error('WebSocket connection error:', error);
@@ -435,6 +464,7 @@ function initializeWebSocket() {
                 window.location.href = '/';
             }
         });
+
     } catch (error) {
         console.error('Error initializing WebSocket:', error);
     }
@@ -840,8 +870,7 @@ styles.textContent = `
 `;
 document.head.appendChild(styles);
 
-// Add this to initialize the page when it loads
-document.addEventListener('DOMContentLoaded', initializeApp);
+// initializeApp is called by the DOMContentLoaded listener at the bottom of this file.
 
 // Update the handleFiles function with parallel processing
 async function handleFiles(files) {
@@ -1084,8 +1113,5 @@ async function downloadFile(url, fileName) {
     
 }
 
-// Initialize everything
-document.addEventListener('DOMContentLoaded', async () => {
-    await initializeApp();
-    setTimeout(initializeWebSocket, 1000);
-});
+// Initialize everything — socket is opened inside initializeApp() after session is confirmed.
+document.addEventListener('DOMContentLoaded', initializeApp);
