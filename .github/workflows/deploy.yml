@@ -1,0 +1,166 @@
+# Push to main  ->  test  ->  build image  ->  push to GHCR  ->  deploy to the VM over SSH.
+# Run it by hand ("Run workflow") with a tag such as sha-1a2b3c4 to redeploy an earlier
+# version — that is the one-click rollback. The VM also rolls back by itself if a new
+# version doesn't come up healthy.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Deploy this existing image tag (e.g. sha-1a2b3c4). Leave empty to test, build and deploy the selected branch."
+        required: false
+        default: ""
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/xylosync
+
+jobs:
+  test:
+    name: End-to-end tests
+    if: github.event_name == 'push' || inputs.tag == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the stack
+        run: docker compose up -d --build --wait --wait-timeout 180
+
+      - name: Run Playwright
+        run: docker compose --profile test run --rm e2e
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 200 app worker minio
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
+  build:
+    name: Build and push image
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: meta
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to production
+    needs: build
+    # Runs after a successful build, or straight away when a tag is given by hand.
+    if: ${{ !cancelled() && (needs.build.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.tag != '')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://xylosync.in
+    env:
+      TAG: ${{ inputs.tag || needs.build.outputs.tag }}
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USER: ${{ secrets.VM_USER }}
+    steps:
+      - name: Check the server is configured
+        id: ready
+        run: |
+          if [ -z "$VM_HOST" ] || [ -z "$VM_USER" ]; then
+            echo "::notice::VM_HOST / VM_USER secrets are not set yet — skipping deploy. The image $IMAGE:$TAG was still built."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.ready.outputs.ok == 'true'
+
+      - name: SSH key
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "$VM_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+
+      - name: Copy deploy files
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          scp deploy/docker-compose.prod.yml deploy/Caddyfile deploy/deploy.sh deploy/rollback.sh \
+            "$VM_USER@$VM_HOST:/opt/xylosync/"
+          ssh "$VM_USER@$VM_HOST" 'chmod +x /opt/xylosync/deploy.sh /opt/xylosync/rollback.sh'
+
+      - name: Let the server pull the image
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The token is piped over SSH (never on a command line) and is only valid for this run.
+        run: printf '%s' "$TOKEN" | ssh "$VM_USER@$VM_HOST" "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
+      - name: Deploy ${{ env.TAG }}
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          # shellcheck disable=SC2029  # TAG is meant to expand here, before the command is sent
+          ssh "$VM_USER@$VM_HOST" "/opt/xylosync/deploy.sh '$TAG'"
+
+      - name: Check the live site
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          for _ in $(seq 1 20); do
+            if curl -fsS https://xylosync.in/healthz; then exit 0; fi
+            sleep 6
+          done
+          echo "::warning::https://xylosync.in/healthz did not answer (DNS or certificate may still be setting up)."
+
+      - name: Log out of the registry on the server
+        if: always() && steps.ready.outputs.ok == 'true'
+        run: ssh "$VM_USER@$VM_HOST" 'docker logout ghcr.io' || true

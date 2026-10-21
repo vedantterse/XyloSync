@@ -1,0 +1,142 @@
+# Production stack for one small VM. Lives in /opt/xylosync on the server next to .env,
+# Caddyfile, deploy.sh and rollback.sh. Images are built by GitHub Actions; the VM never builds.
+#
+#   IMAGE_TAG (in .env) picks the app version. deploy.sh sets it; rollback.sh moves it back.
+#
+# Memory caps keep the whole stack inside a 1 GB VM (plus swap). Measured idle use is about
+# 190 MB in total; the caps leave room for large uploads.
+name: xylosync
+
+x-app-env: &app-env
+  NODE_ENV: production
+  PORT: "3000"
+  REDIS_URL: redis://redis:6379
+  MINIO_ENDPOINT: minio
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+  MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+  MINIO_BUCKET: ${MINIO_BUCKET:-xylosync}
+  MINIO_WEBHOOK_TARGET: XYLOSYNC
+  APP_SECRET: ${APP_SECRET:?set APP_SECRET in .env}
+  WEBHOOK_SECRET: ${WEBHOOK_SECRET:?set WEBHOOK_SECRET in .env}
+  COOKIE_SECURE: "true"
+  MAX_ROOMS_PER_USER: ${MAX_ROOMS_PER_USER:-3}
+  ROOM_TTL_HOURS: ${ROOM_TTL_HOURS:-8}
+  LOG_WEBHOOKS: ${LOG_WEBHOOKS:-false}
+  SMTP_HOST: ${SMTP_HOST:?set SMTP_HOST in .env}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_SECURE: ${SMTP_SECURE:-false}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASS: ${SMTP_PASS:-}
+  MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
+  MAIL_INBOX_URL: ""
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    mem_limit: 96m
+    logging: *logging
+
+  app:
+    image: ${IMAGE:-ghcr.io/vedantterse/xylosync}:${IMAGE_TAG:?set IMAGE_TAG (deploy.sh does this)}
+    command: ["node", "server/server.js"]
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      NODE_OPTIONS: --max-old-space-size=224
+    expose: ["3000"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    mem_limit: 320m
+    logging: *logging
+
+  worker:
+    image: ${IMAGE:-ghcr.io/vedantterse/xylosync}:${IMAGE_TAG:?set IMAGE_TAG (deploy.sh does this)}
+    command: ["node", "server/worker.js"]
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      NODE_OPTIONS: --max-old-space-size=160
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    mem_limit: 224m
+    logging: *logging
+
+  redis:
+    image: redis:7.4-alpine
+    # noeviction: the job queue and room data must never be silently dropped.
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000", "--maxmemory", "80mb", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 112m
+    logging: *logging
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT: "false"
+      GOMEMLIMIT: 280MiB
+      MINIO_NOTIFY_WEBHOOK_ENABLE_XYLOSYNC: "on"
+      MINIO_NOTIFY_WEBHOOK_ENDPOINT_XYLOSYNC: http://app:3000/webhooks/storage
+      MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN_XYLOSYNC: ${WEBHOOK_SECRET}
+    # The console is only reachable through an SSH tunnel, never from the internet:
+    #   ssh -L 9001:127.0.0.1:9001 <user>@<vm>   then open http://localhost:9001
+    ports:
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 352m
+    logging: *logging
+
+volumes:
+  caddy-data:
+  caddy-config:
+  redis-data:
+  minio-data:

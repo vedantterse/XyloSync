@@ -168,12 +168,20 @@ go over Socket.IO.
 | PUT | `/api/mail/drafts/:draftId/files` | Upload an email attachment (raw body) |
 | POST | `/api/mail/send` | `{ recipients[], message?, draftId?, roomCode?, roomFiles?[] }` |
 
+## Deploying
+
+Production runs on one small VM behind Caddy (automatic HTTPS). Every push to `main` is tested,
+built into an image by GitHub Actions and deployed over SSH, with automatic and one-click rollback.
+Step-by-step guide for Azure and `xylosync.in`: [deploy/README.md](deploy/README.md).
+
 ## Project layout
 
 ```
 server/        Express app, Socket.IO, storage, chat, rooms, background worker
 public/        The website: index.html (landing), room.html, css/, js/
 e2e/           Playwright end-to-end tests
+deploy/        Production: compose file, Caddyfile, deploy/rollback/setup scripts, guide
+.github/       GitHub Actions workflow: test, build, push, deploy
 Dockerfile     Image for the app and the worker
 docker-compose.yml
 ```
