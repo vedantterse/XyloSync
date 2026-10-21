@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <title>Room — XyloSync</title>
+    <meta name="theme-color" content="#f6f6f4">
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+    <link rel="preload" href="/vendor/geist/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/room.css">
+    <script src="/js/theme.js"></script>
+    <script src="/socket.io/socket.io.min.js" defer></script>
+    <script type="module" src="/js/room.js"></script>
+</head>
+<body class="app">
+    <header class="bar">
+        <div class="bar-left">
+            <a class="home" href="/" title="XyloSync home" aria-label="XyloSync home"><span data-mark></span></a>
+            <a class="crumb" href="/">Rooms</a>
+            <span class="crumb-sep" aria-hidden="true">/</span>
+            <button class="room-code" id="roomCode" type="button" title="Copy room code" hidden>
+                <span class="digits mono"></span><span data-icon="copy" data-icon-class="sm"></span>
+            </button>
+            <span class="tag" id="privateTag" hidden><span data-icon="lock" data-icon-class="sm"></span>Private</span>
+        </div>
+        <div class="bar-right" id="barRight" hidden>
+            <span class="live" id="liveState" title="Real-time connection"><i class="dot idle"></i><span class="text">Connecting</span></span>
+            <button class="people" id="peopleBtn" type="button" title="People in this room">
+                <span class="avatar-stack" id="presenceStack"></span>
+                <span class="count" id="presenceCount">1</span>
+                <span class="badge" id="waitingBadge" hidden></span>
+            </button>
+            <button class="btn quiet icon" id="themeToggle" type="button"></button>
+            <button class="btn quiet icon" id="roomMenuBtn" type="button" title="Room options" aria-label="Room options"><span data-icon="moreH"></span></button>
+            <button class="btn chat-toggle" id="chatToggle" type="button" aria-controls="chat" aria-expanded="true">
+                <span data-icon="chat"></span><span class="btn-text">Chat</span><span class="badge" id="unreadBadge" hidden></span>
+            </button>
+        </div>
+    </header>
+
+    <div class="view" id="loadingView">
+        <div class="loading"><span class="spinner"></span></div>
+    </div>
+
+    <div class="view state" id="missingView" hidden>
+        <h1>Room not found</h1>
+        <p id="missingText">This room doesn’t exist, or its owner deleted it.</p>
+        <a class="btn primary" href="/">Back to XyloSync</a>
+    </div>
+
+    <div class="view state lobby" id="lobbyView" hidden>
+        <div class="lobby-card">
+            <span class="lobby-lock" data-icon="lock" data-icon-class="lg"></span>
+            <h1 id="lobbyTitle">Room is private</h1>
+            <p id="lobbyText"></p>
+            <form class="lobby-form" id="lobbyForm" autocomplete="off" novalidate>
+                <div class="field">
+                    <label for="lobbyName">Your name in this room</label>
+                    <input class="input" id="lobbyName" maxlength="32" placeholder="e.g. Priya from design" autocomplete="nickname">
+                    <p class="error-text" id="lobbyError" hidden></p>
+                </div>
+                <button class="btn primary lg" id="lobbyAsk" type="submit">Ask to join</button>
+            </form>
+            <div class="lobby-wait" id="lobbyWait" hidden>
+                <p class="wait-line"><span class="spinner"></span><span id="lobbyWaitText"></span></p>
+                <button class="btn quiet" id="lobbyCancel" type="button">Cancel request</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace" id="workspace" hidden>
+        <main class="files" id="filesPane">
+            <div class="files-head">
+                <div class="files-title">
+                    <h1>Files</h1>
+                    <span class="files-meta" id="usage"></span>
+                </div>
+                <div class="tools">
+                    <label class="search">
+                        <span data-icon="search" data-icon-class="sm"></span>
+                        <input id="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search files">
+                        <span class="kbd">/</span>
+                    </label>
+                    <select class="select" id="sort" aria-label="Sort files">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="name">Name</option>
+                        <option value="largest">Largest</option>
+                    </select>
+                    <div class="seg" role="group" aria-label="View">
+                        <button type="button" data-view="grid" title="Grid" aria-pressed="true"><span data-icon="grid" data-icon-class="sm"></span></button>
+                        <button type="button" data-view="list" title="List" aria-pressed="false"><span data-icon="list" data-icon-class="sm"></span></button>
+                    </div>
+                    <div class="tool-group">
+                        <button class="btn" id="noteBtn" type="button" title="Write a note"><span data-icon="pen" data-icon-class="sm"></span><span class="btn-text">Note</span></button>
+                        <button class="btn" id="mailBtn" type="button" title="Email files"><span data-icon="mail" data-icon-class="sm"></span><span class="btn-text">Email</span></button>
+                        <a class="btn" id="downloadAll" title="Download everything as a ZIP"><span data-icon="archive" data-icon-class="sm"></span><span class="btn-text">Download all</span></a>
+                    </div>
+                    <button class="btn icon more-tools" id="moreTools" type="button" title="More" aria-label="More file actions"><span data-icon="moreH"></span></button>
+                    <button class="btn primary" id="uploadBtn" type="button" title="Upload (U)"><span data-icon="upload" data-icon-class="sm"></span><span class="btn-text">Upload</span></button>
+                </div>
+            </div>
+
+            <div class="files-body" id="filesBody">
+                <button class="empty" id="emptyState" type="button" hidden>
+                    <span class="empty-title">Drop files anywhere to share them</span>
+                    <span class="empty-text">Everyone in this room sees them the moment the upload finishes. Any type, any size — or paste a screenshot with Ctrl V.</span>
+                    <span class="btn primary">Choose files</span>
+                </button>
+                <div class="grid" id="fileGrid"></div>
+                <p class="no-results" id="noResults" hidden>No files match “<span></span>”.</p>
+            </div>
+        </main>
+
+        <aside class="chat" id="chat" aria-label="Room chat"></aside>
+    </div>
+
+    <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
+        <div class="drop-frame">
+            <p class="drop-title">Drop to upload</p>
+            <p class="drop-text">Into room <span id="dropCode"></span>, for everyone in it.</p>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" multiple hidden>
+</body>
+</html>

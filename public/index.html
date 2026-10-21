@@ -2,70 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
-    <title>XyloSync - Secure File Sharing!</title>
-    <!-- Essential Meta Tags -->
-    <meta name="description" content="XyloSync - The secure and fast file sharing portal. Share files instantly with end-to-end encryption and real-time synchronization. Free, secure, and easy to use.">
-    <meta name="keywords" content="XyloSync, Xylo Sync, file sharing, secure file transfer, cloud storage, real-time sync, file upload, secure sharing, instant file transfer">
-    <meta name="author" content="Vedantterse">
-    <meta name="robots" content="index, follow">
-    <!--styles -->
-    <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/index.css" /> 
-    <!-- Preloading critical resources -->
-    <link rel="preload" href="css/index.css" as="style">
-    <link rel="preload" href="css/style.css" as="style">
-    <!-- Socket.io client -->
-    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" 
-            integrity="sha384-JnYWOFVkPE8ojYz4/wKpzZFEp8ZhxJHqeYtqm7uc4BwyLEqVx6njLm0QQyZEO6Zr" 
-            crossorigin="anonymous"></script>
-    
-    <!-- existing scripts -->
-    <script src="js/main.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>XyloSync — drop it here, open it there</title>
+    <meta name="description" content="XyloSync rooms put a file on every phone and laptop in the room the moment it finishes uploading. Self-hosted, no size limit, no accounts.">
+    <meta name="theme-color" content="#f6f6f4">
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+    <link rel="preload" href="/vendor/geist/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/landing.css">
+    <script src="/js/theme.js"></script>
+    <script type="module" src="/js/landing.js"></script>
 </head>
-<body>
-    <div id="particles-js"></div>
-    
-    <!-- User Profile -->
-    <div class="user-profile-container">
-        <div id="user-button"></div>
-    </div>
+<body class="landing">
+    <header class="nav">
+        <a class="wordmark" href="/" aria-label="XyloSync home"><span data-mark></span>XyloSync</a>
+        <nav class="nav-links">
+            <button class="nav-link" id="roomsMenu" type="button" hidden>Rooms <span class="nav-count" id="roomsCount"></span></button>
+            <a class="nav-link" href="#story">How it works</a>
+            <button class="btn quiet icon" id="themeToggle" type="button"></button>
+            <a class="btn primary" href="#start" id="navCreate">Create room</a>
+        </nav>
+    </header>
 
-    <!-- Main Content -->
-    <div class="login-container">
-        <div class="login-header">
-            <h1>XyloSync</h1>
-            <p>File Sharing Portal</p>
-        </div>
-        <div class="room-buttons-container">
-            <button class="room-button create-room">Create Room</button>
-            <div class="divider">
-                <span></span>
-                <div class="orb"></div>
-                <span></span>
-            </div>
-            <button class="room-button join-room">Join Room</button>
-        </div>
-    </div>
-    <div class="join-room-modal" id="joinRoomModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Join Room</h2>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="code-input-container">
-                    <input type="text" 
-                           maxlength="5" 
-                           placeholder="Enter 5-digit code"
-                           id="roomCodeInput"
-                           class="room-code-input">
-                    <div class="code-validation-indicator"></div>
+    <main>
+        <section class="story" id="story" aria-label="How XyloSync works">
+            <div class="stage">
+                <h1 class="sentence">
+                    <span class="half first">Drop it here,</span>
+                    <span class="half second">open it there.</span>
+                </h1>
+
+                <div class="lede" id="start">
+                    <p>A XyloSync room puts a file on every phone and laptop in it the moment the upload finishes. Self-hosted, no size limit, no accounts.</p>
+                    <div class="start">
+                        <button class="btn signal lg" id="createRoom" type="button">Create a room</button>
+                        <form class="join" id="joinForm" autocomplete="off" novalidate>
+                            <label for="code0">or join with a code</label>
+                            <div class="code" id="codeInput">
+                                <input id="code0" inputmode="numeric" aria-label="Digit 1" autocomplete="one-time-code">
+                                <input inputmode="numeric" aria-label="Digit 2">
+                                <input inputmode="numeric" aria-label="Digit 3">
+                                <input inputmode="numeric" aria-label="Digit 4">
+                                <input inputmode="numeric" aria-label="Digit 5">
+                            </div>
+                        </form>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="privateRoom">
+                        <span class="track"></span>
+                        <span>Private room — I approve each person</span>
+                    </label>
                 </div>
-                <button class="join-btn" id="joinRoomBtn">Join Room</button>
+
+                <div class="frame" id="frame" aria-hidden="true">
+                    <div class="frame-fill"></div>
+                    <div class="reel" id="reel">
+                        <!-- 1: the room on a laptop, a file arriving -->
+                        <div data-ui class="shot shot-room">
+                            <div class="ui-bar"><span class="ui-code">48213</span><span class="ui-live"><i></i>3 here</span></div>
+                            <div class="ui-grid" id="demoGrid">
+                                <div class="ui-file arriving" id="demoFile"><b>PDF</b><span class="n">Q3 report.pdf</span><span class="m">2.4 MB · Maya</span><i class="new"></i></div>
+                                <div class="ui-file img"><span class="n">site-visit.jpg</span><span class="m">4.1 MB · Arjun</span></div>
+                                <div class="ui-file"><b>DOCX</b><span class="n">brief-v3.docx</span><span class="m">88 KB · Lena</span></div>
+                                <div class="ui-file"><b>ZIP</b><span class="n">build-1042.zip</span><span class="m">1.3 GB · Arjun</span></div>
+                                <div class="ui-file"><b>MP4</b><span class="n">walkthrough.mp4</span><span class="m">612 MB · Lena</span></div>
+                                <div class="ui-file"><b>XLSX</b><span class="n">budget-q3.xlsx</span><span class="m">164 KB · Maya</span></div>
+                                <div class="ui-file"><b>FIG</b><span class="n">logo-final.fig</span><span class="m">9.8 MB · Dev</span></div>
+                                <div class="ui-file"><b>TXT</b><span class="n">wifi-password.txt</span><span class="m">32 B · Arjun</span></div>
+                            </div>
+                        </div>
+                        <!-- 2: the same room on a phone -->
+                        <div data-ui class="shot shot-phone">
+                            <div class="ui-phone">
+                                <div class="ui-bar"><span class="ui-code">48213</span><span class="ui-live"><i></i>Live</span></div>
+                                <div class="ui-row fresh"><b>PDF</b><span class="n">Q3 report.pdf</span><span class="m">just now · Maya</span></div>
+                                <div class="ui-row"><b>JPG</b><span class="n">site-visit.jpg</span><span class="m">2 min · Arjun</span></div>
+                                <div class="ui-row"><b>DOCX</b><span class="n">brief-v3.docx</span><span class="m">9 min · Lena</span></div>
+                                <div class="ui-row"><b>ZIP</b><span class="n">build-1042.zip</span><span class="m">1 hr · Arjun</span></div>
+                            </div>
+                            <div class="ui-phone-note">
+                                <span class="n">Arjun’s phone</span>
+                                <span class="m">Same room, same second. Nothing to install.</span>
+                            </div>
+                        </div>
+                        <!-- 3: the room's chat -->
+                        <div data-ui class="shot shot-chat">
+                            <div class="ui-msg them"><span class="who">Maya</span>Numbers for Thursday are in. Page 4 has the new split.<span class="t">10:42</span></div>
+                            <div class="ui-msg me"><span class="quote"><b>Maya</b>Numbers for Thursday are in…</span>Perfect, printing it now<span class="t">10:43</span><span class="react"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>2</span></div>
+                            <div class="ui-msg them"><span class="who">Arjun</span>Can someone drop the logo files too?<span class="t">10:44</span></div>
+                            <div class="ui-typing">Lena is typing…</div>
+                        </div>
+                        <!-- 4: a private room's waiting list -->
+                        <div data-ui class="shot shot-lobby">
+                            <div class="ui-bar"><span class="ui-code">48213</span><span class="ui-lock">Private</span></div>
+                            <p class="ui-h">Waiting to join</p>
+                            <div class="ui-request"><span class="av" style="--hue:210">DK</span><span class="n">Dev Kapoor<span class="m">asked 20 s ago</span></span><span class="ui-btn">Deny</span><span class="ui-btn dark">Admit</span></div>
+                            <div class="ui-request"><span class="av" style="--hue:30">SR</span><span class="n">Sana R.<span class="m">asked 1 min ago</span></span><span class="ui-btn">Deny</span><span class="ui-btn dark">Admit</span></div>
+                            <p class="ui-refused">“maya” was turned away — Maya is already in this room.</p>
+                            <p class="ui-h ui-h2">In this room</p>
+                            <div class="ui-members"><span class="av" style="--hue:0">MA</span>Maya<span class="av" style="--hue:120">AR</span>Arjun<span class="av" style="--hue:270">LE</span>Lena</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scene" id="scene" aria-hidden="true"></div>
+                <p class="caption" id="caption" aria-live="polite">Files land on every screen in the room the moment they finish uploading. Drop any file on this page to watch it happen.</p>
             </div>
-        </div>
-    </div>
+        </section>
+
+        <section class="close" id="close" aria-labelledby="closeTitle">
+            <h2 id="closeTitle">Five digits.<br>Every screen.</h2>
+            <div class="close-grid">
+                <p class="close-copy">Open a room and read the code out loud. Everyone’s in, and everything you drop shows up for them. Rooms clear themselves after eight hours — files, chat and all.</p>
+                <div class="close-actions">
+                    <button class="orb" id="createRoomClose" type="button">
+                        <span class="orb-text">Create<br>a room</span>
+                        <span class="orb-arrow" data-icon="arrowRight"></span>
+                    </button>
+                    <form class="close-join" id="closeJoin" autocomplete="off" novalidate>
+                        <label for="closeCode0">Have a code? Type it.</label>
+                        <div class="code big" id="closeCode">
+                            <input id="closeCode0" inputmode="numeric" aria-label="Digit 1">
+                            <input inputmode="numeric" aria-label="Digit 2">
+                            <input inputmode="numeric" aria-label="Digit 3">
+                            <input inputmode="numeric" aria-label="Digit 4">
+                            <input inputmode="numeric" aria-label="Digit 5">
+                        </div>
+                    </form>
+                </div>
+                <label class="switch close-switch">
+                    <input type="checkbox" id="privateRoomClose">
+                    <span class="track"></span>
+                    <span>Private room — I approve each person</span>
+                </label>
+            </div>
+            <footer class="foot">
+                <span>XyloSync runs on your own Docker Compose stack — MinIO, Redis and mail included.</span>
+                <span>Made by Vedantterse</span>
+            </footer>
+        </section>
+    </main>
 </body>
 </html>

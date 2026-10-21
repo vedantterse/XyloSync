@@ -1,7 +1,0 @@
-.github
-.git
-README.md
-bucket-cleanup-test.js
-node_modules
-.env
-.env.local

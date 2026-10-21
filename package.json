@@ -1,34 +1,35 @@
 {
   "name": "xylosync",
-  "version": "1.0.0",
-  "description": "Secure file sharing portal with real-time synchronization",
+  "version": "2.0.0",
+  "description": "Self-hosted, real-time file sharing rooms backed by MinIO and Redis",
   "main": "server/server.js",
   "type": "module",
   "scripts": {
     "start": "node server/server.js",
+    "worker": "node server/worker.js",
     "dev": "nodemon server/server.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.10",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "@socket.io/redis-emitter": "^5.1.0",
     "archiver": "^7.0.1",
+    "bullmq": "^5.34.0",
     "cookie-parser": "^1.4.7",
-    "dotenv": "^16.4.7",
     "express": "^4.22.1",
-    "express-session": "^1.18.2",
-    "memorystore": "^1.6.7",
-    "multer": "^2.1.1",
+    "ioredis": "^5.4.2",
+    "minio": "^8.0.3",
     "nodemailer": "^7.0.11",
-    "sib-api-v3-sdk": "^8.5.0",
-    "socket.io": "^4.8.0",
-    "uuid": "^10.0.0"
+    "socket.io": "^4.8.1"
   },
   "overrides": {
     "qs": "^6.14.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.1.9"
   },
   "engines": {
-  "node": "20.x"
+    "node": ">=20"
   }
 }
