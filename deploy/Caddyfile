@@ -15,7 +15,12 @@
 		}
 	}
 
-	# Uploads stream straight through (no size limit); WebSockets work as-is.
+	# A backstop for the app's own per-file limit: bigger bodies are cut off here.
+	request_body {
+		max_size {$MAX_FILE_MB:15}MiB
+	}
+
+	# Uploads stream straight through; WebSockets work as-is.
 	reverse_proxy app:3000 {
 		flush_interval -1
 	}

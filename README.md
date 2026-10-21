@@ -2,7 +2,7 @@
 
 Self-hosted, real-time file sharing rooms. Create a room, share its 5-digit code, and every file
 dropped in shows up on every connected phone and laptop the moment the upload finishes — with a
-live chat beside it, no size limits, and no third-party services. Everything runs locally in one
+live chat beside it, no accounts, and no third-party services. Everything runs locally in one
 Docker Compose stack.
 
 ## Quick start
@@ -52,8 +52,8 @@ window — each gets its own identity. Other devices on your network can use
   at a time; at the limit, "Create a room" opens your rooms so you can open or delete one.
 - **Live everywhere** — uploads, deletions, chat and who's online reach every open screen instantly,
   without refreshing.
-- **No size limits** — files stream straight from the browser into object storage; nothing is held
-  in memory. Downloads stream back with resume support.
+- **Streamed uploads** — files up to 15 MB each (`MAX_FILE_MB`) stream straight from the browser
+  into object storage; nothing is held in memory. Bigger files are refused before upload starts. Downloads stream back with resume support.
 - **Room chat** — a hideable chat column with replies, reactions (one per person), edits, deletes,
   typing indicators, unread counts and swipe-to-reply on phones.
 - **Private rooms** — switch on "Private room" when creating one. Visitors wait until the owner
@@ -81,6 +81,7 @@ All settings live in `.env` (see [.env.example](.env.example)). The most useful 
 | `WEBHOOK_SECRET` | dev value | Shared by MinIO and the app. **Change it** too |
 | `MAX_ROOMS_PER_USER` | `3` | Rooms each person can own at once |
 | `ROOM_TTL_HOURS` | `8` | Hours until a room deletes itself; `0` keeps rooms forever |
+| `MAX_FILE_MB` | `15` | Largest single upload, in MB (also enforced by Caddy in production) |
 | `COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS |
 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | `xylosync` / `xylosync-secret` | Storage credentials |
 | `MINIO_CONSOLE_PORT` | `9101` | Port for the MinIO console |

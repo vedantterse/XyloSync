@@ -38,10 +38,20 @@ function readFileHeader(req) {
     }
 }
 
-// Stream the raw request body straight into MinIO: no buffering on disk, no size limit.
+const MAX_FILE_BYTES = config.maxFileMb * 1024 * 1024;
+
+// Stream the raw request body straight into MinIO, with no buffering on disk. The declared
+// length is required and checked first; Node never reads past it, so the limit can't be dodged.
 async function streamUpload(req, key, user) {
-    const length = Number(req.get('content-length'));
-    const size = Number.isFinite(length) && length >= 0 ? length : undefined;
+    const length = req.get('content-length');
+    const size = Number(length);
+    if (length === undefined || !Number.isSafeInteger(size) || size < 0) {
+        throw new HttpError(411, 'Uploads need a Content-Length header.');
+    }
+    if (size > MAX_FILE_BYTES) {
+        req.res.set('Connection', 'close'); // don't read the rest of an oversized body
+        throw new HttpError(413, `Files can be up to ${config.maxFileMb} MB each.`);
+    }
     const type = req.get('x-file-type') || 'application/octet-stream';
 
     let aborted = false;
@@ -113,7 +123,7 @@ export function createApi(io) {
         res.json({
             success: true,
             user: { name: req.user.name, publicId: req.user.publicId, custom: req.user.custom },
-            limits: { maxRoomsPerUser: config.maxRoomsPerUser },
+            limits: { maxRoomsPerUser: config.maxRoomsPerUser, maxFileBytes: MAX_FILE_BYTES },
             mailInboxUrl: config.mail.inboxUrl || null
         });
     });

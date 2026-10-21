@@ -441,8 +441,6 @@
 .fig { display: flex; align-items: baseline; gap: 8px; font-size: clamp(64px, 8.5vw, 148px); line-height: 1; font-weight: 600; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
 .fig small { font-size: 0.28em; letter-spacing: 0; opacity: 0.6; }
 .fig-label { margin-top: 16px; max-width: 250px; font-size: 16px; line-height: 1.45; opacity: 0.75; }
-.inf { width: 1.75em; height: 0.82em; overflow: visible; }
-.inf path { fill: none; stroke: currentColor; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
 
 /* The close now sits inside the dark run; it keeps its own spacing. */
 .dark-zone .close { background: transparent; }
@@ -471,7 +469,6 @@
 .still .day .pin { position: static; height: auto; overflow: visible; }
 .still .day-track { flex-wrap: wrap; transform: none !important; }
 .still .dc-bar i, .still .day-progress span { transform: none; }
-.still .inf path { stroke-dashoffset: 0; }
 
 /* On desktop the later frames are played by the scroll, not by a timer. */
 .stage.scrub .shot:not(.shot-room) * { animation: none !important; }

@@ -64,8 +64,7 @@ export function initStory({ reducedMotion }) {
         el,
         from: Number(el.dataset.countFrom || 0),
         to: Number(el.dataset.countTo || 0),
-        value: $('[data-value]', el),
-        path: $('.inf path', el)
+        value: $('[data-value]', el)
     }));
 
     if (reducedMotion) {
@@ -172,9 +171,5 @@ function paintCard(card, local, animate) {
 }
 
 function paintFigure(f, k) {
-    if (f.path) {
-        f.path.style.strokeDashoffset = String(1 - k);
-        return;
-    }
     f.value.textContent = String(Math.round(lerp(f.from, f.to, k)));
 }

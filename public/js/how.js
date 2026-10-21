@@ -72,13 +72,13 @@ if (reducedMotion) {
    Chapter 1 — the journey: one file through the real pipeline
    ====================================================================== */
 
-const PART = 64 * 1024 * 1024;          // the storage client writes 64 MB parts
+const MAX_FILE = 15 * 1024 * 1024;      // the per-file upload limit
 const LINK = 12.5e6;                    // a 100 Mbit/s connection, in bytes per second
 const SAMPLES = [
     { name: 'Q3 report.pdf', size: 2.4e6 },
     { name: 'site-visit.jpg', size: 4.1e6 },
-    { name: 'walkthrough.mp4', size: 612e6 },
-    { name: 'build-1042.zip', size: 1.3e9 },
+    { name: 'walkthrough.mp4', size: 9.8e6 },
+    { name: 'build-1042.zip', size: 14.2e6 },
     { name: 'wifi-password.txt', size: 32 }
 ];
 let sampleIndex = 0;
@@ -101,17 +101,16 @@ const READY = { title: 'Ready when you are.', text: 'Scroll down and the file mo
 // webhook and the app tells every screen — about 60 ms in our measurements.
 function timelineFor(file) {
     const upload = Math.max(4, (file.size / LINK) * 1000);
-    const count = Math.max(1, Math.ceil(file.size / PART));
     const steps = [
-        { at: 0, title: 'You drop the file.', text: 'Your browser streams it to XyloSync in one request. Nothing is split up for you to reassemble, and nothing is held in memory.' },
-        { at: Math.min(6, upload), title: 'XyloSync passes it straight through.', text: 'The bytes go on to storage while they are still arriving. The server never waits for the whole file, which is why there is no size limit.' },
-        { at: upload, title: `Storage writes it in ${count.toLocaleString()} ${count === 1 ? 'part' : 'parts'}.`, text: `${formatBytes(file.size)} is written in 64 MB parts as it streams in. When the last part lands, the file exists — complete or not at all.` },
+        { at: 0, title: 'You drop the file.', text: 'Your browser checks it’s under 15 MB, then streams it to XyloSync in one request. Nothing is split up for you to reassemble.' },
+        { at: Math.min(6, upload), title: 'XyloSync passes it straight through.', text: 'The bytes go on to storage while they are still arriving. The server never waits for the whole file or keeps a copy of it, so a busy room costs it almost no memory.' },
+        { at: upload, title: 'Storage writes it as it streams in.', text: `${formatBytes(file.size)} lands in MinIO piece by piece. When the last byte arrives, the file exists — complete or not at all.` },
         { at: upload + 38, title: 'Storage rings the doorbell.', text: 'MinIO calls XyloSync’s webhook: “a new file just landed in room 48213.” Files added any other way announce themselves the same way.' },
         { at: upload + 44, title: 'One message to everyone in the room.', text: 'XyloSync sends the file’s name, size and sender down the live connection every open screen keeps with it.' },
         { at: upload + 58, title: `Every screen has ${file.name}.`, text: 'Phones, laptops and tablets show it with a red dot for “new” — no refresh, no polling, no app to install.' }
     ];
     steps.forEach((s, i) => { s.label = i === 0 ? '0 ms' : `+${fmtMs(s.at - steps[i - 1].at)}`; });
-    return { file, upload, count, shown: Math.min(count, 8), steps, summary: `${fmtMs(upload)} to upload on 100 Mbit/s, then 58 ms to every screen` };
+    return { file, upload, shown: 8, steps, summary: `${fmtMs(upload)} to upload on 100 Mbit/s, then 58 ms to every screen` };
 }
 
 let timeline = null;
@@ -298,6 +297,10 @@ addEventListener('drop', (e) => {
     document.body.classList.remove('dropping');
     const file = e.dataTransfer.files[0];
     if (!file) return;
+    if (file.size > MAX_FILE) {
+        toast(`${file.name} is ${formatBytes(file.size)} — a real room takes files up to 15 MB, so your browser would stop it before uploading.`, 'info');
+        return;
+    }
     const r = machine.getBoundingClientRect();
     if (r.top < navHeight() || r.bottom > innerHeight) {
         const pinned = !journey.classList.contains('unpinned') && !reducedMotion;

@@ -478,7 +478,24 @@ export const session = { user: null, limits: {}, mailInboxUrl: null };
 export async function loadSession() {
     const data = await api('/api/me');
     Object.assign(session, { user: data.user, limits: data.limits, mailInboxUrl: data.mailInboxUrl });
+    $$('[data-max-file]').forEach((el) => { el.textContent = maxFileLabel(); });
     return session;
+}
+
+export const maxFileLabel = () => `${Math.round((session.limits?.maxFileBytes || 15 * 1048576) / 1048576)} MB`;
+
+// Files over the server's per-file limit are refused here, before a single byte is sent.
+export function allowedFiles(files) {
+    const max = session.limits?.maxFileBytes;
+    const list = [...files];
+    if (!max) return list;
+    const tooBig = list.filter((f) => f.size > max);
+    if (tooBig.length) {
+        toast(tooBig.length === 1
+            ? `${tooBig[0].name} is over the ${maxFileLabel()} limit`
+            : `${tooBig.length} files are over the ${maxFileLabel()} limit`, 'error');
+    }
+    return list.filter((f) => f.size <= max);
 }
 
 export function renameDialog({ title = 'Your name', message = 'Shown next to files you upload and messages you send.', value, save, onSaved } = {}) {

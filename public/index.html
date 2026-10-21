@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>XyloSync — drop it here, open it there</title>
-    <meta name="description" content="XyloSync rooms put a file on every phone and laptop in the room the moment it finishes uploading. Self-hosted, no size limit, no accounts.">
+    <meta name="description" content="XyloSync rooms put a file on every phone and laptop in the room the moment it finishes uploading. Self-hosted, no accounts, nothing kept past eight hours.">
     <meta name="theme-color" content="#f6f6f4">
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
     <link rel="preload" href="/vendor/geist/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -33,7 +33,7 @@
                 </h1>
 
                 <div class="lede" id="start">
-                    <p>A XyloSync room puts a file on every phone and laptop in it the moment the upload finishes. Self-hosted, no size limit, no accounts.</p>
+                    <p>A XyloSync room puts a file on every phone and laptop in it the moment the upload finishes. Self-hosted, no accounts, nothing kept past eight hours.</p>
                     <div class="start">
                         <button class="btn signal lg" id="createRoom" type="button">Create a room</button>
                         <form class="join" id="joinForm" autocomplete="off" novalidate>
@@ -126,8 +126,8 @@
                     <p class="sub">It’s a web page. Phones, laptops, tablets — anything with a browser.</p>
                 </div>
                 <div class="phrase" data-phrase>
-                    <p class="words">No size limit.</p>
-                    <p class="sub">Files stream straight into storage, from a one-line note to a 40 GB video.</p>
+                    <p class="words">No waiting.</p>
+                    <p class="sub">Files up to <span data-max-file>15 MB</span> stream straight into storage and reach every screen in about 60 ms.</p>
                 </div>
                 <div class="phrase" data-phrase>
                     <p class="words">Nothing kept.</p>
@@ -208,7 +208,7 @@
                 <div class="figure" data-count-to="60"><p class="fig"><span data-value>0</span><small>ms</small></p><p class="fig-label">from an upload finishing to every screen showing it</p></div>
                 <div class="figure" data-count-to="8"><p class="fig"><span data-value>0</span><small>h</small></p><p class="fig-label">until the room deletes itself, with everything in it</p></div>
                 <div class="figure" data-count-from="100" data-count-to="0"><p class="fig"><span data-value>100</span></p><p class="fig-label">accounts you need to make — counting down to the real number</p></div>
-                <div class="figure figure-inf"><p class="fig"><svg class="inf" viewBox="0 0 120 56" aria-hidden="true"><path pathLength="1" d="M60 28c-9-12-17-18-27-18a18 18 0 1 0 0 36c10 0 18-6 27-18zm0 0c9 12 17 18 27 18a18 18 0 1 0 0-36c-10 0-18 6-27 18z"/></svg><span class="sr-only">Unlimited</span></p><p class="fig-label">size limit on a single file</p></div>
+                <div class="figure" data-count-to="15"><p class="fig"><span data-value>0</span><small>MB</small></p><p class="fig-label">per file, streamed straight into storage</p></div>
             </div>
         </section>
 

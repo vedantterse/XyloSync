@@ -1,5 +1,5 @@
 // Quick notes and email composition dialogs for the room page.
-import { api, icon, html, toast, openModal, formatBytes, extLabel, escapeHtml, session, uploadRaw, uuid } from './common.js';
+import { api, icon, html, toast, openModal, formatBytes, extLabel, escapeHtml, session, uploadRaw, uuid, allowedFiles, maxFileLabel } from './common.js';
 
 /* ======================================================================
    Notes
@@ -119,7 +119,7 @@ export function openMailDialog({ roomCode = null, roomFiles = [] } = {}) {
                 <div class="field">
                     <span class="label">Upload from this device</span>
                     <label class="attach-drop" id="attachDrop">
-                        ${icon('paperclip')}<span>Drop files here or <u>browse</u> — no size limit</span>
+                        ${icon('paperclip')}<span>Drop files here or <u>browse</u> — up to ${maxFileLabel()} each</span>
                         <input type="file" multiple hidden>
                     </label>
                     <div class="attach-list"></div>
@@ -202,7 +202,7 @@ export function openMailDialog({ roomCode = null, roomFiles = [] } = {}) {
         if (roomCount) roomCount.textContent = picked.size ? `· ${picked.size} selected` : '';
     };
     const addFiles = (files) => {
-        for (const file of files) {
+        for (const file of allowedFiles(files)) {
             const row = html`
                 <div class="attach-item">
                     <span class="attach-ext">${escapeHtml(extLabel(file.name))}</span>

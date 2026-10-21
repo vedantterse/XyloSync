@@ -23,6 +23,7 @@ x-app-env: &app-env
   COOKIE_SECURE: "true"
   MAX_ROOMS_PER_USER: ${MAX_ROOMS_PER_USER:-3}
   ROOM_TTL_HOURS: ${ROOM_TTL_HOURS:-8}
+  MAX_FILE_MB: ${MAX_FILE_MB:-15}
   LOG_WEBHOOKS: ${LOG_WEBHOOKS:-false}
   SMTP_HOST: ${SMTP_HOST:?set SMTP_HOST in .env}
   SMTP_PORT: ${SMTP_PORT:-587}
@@ -47,6 +48,7 @@ services:
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+      MAX_FILE_MB: ${MAX_FILE_MB:-15}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

@@ -1,5 +1,6 @@
+import http from 'http';
 import { test, expect } from '@playwright/test';
-import { newPerson, sendChat } from './helpers.js';
+import { newPerson, sendChat, createRoom, openRoom } from './helpers.js';
 
 // Someone removed from a private room must lose every way in — HTTP, sockets, email — and can
 // only come back by asking again and being admitted again.
@@ -99,4 +100,42 @@ test('identity cookies cannot be forged to become the owner', async ({ browser }
     expect((await page.request.delete(`/api/rooms/${code}`)).status()).toBe(403);
     await forger.close();
     await owner.context.close();
+});
+
+// Each upload is capped at 15 MB: the server refuses bigger or unsized bodies outright, and the
+// room page refuses big files before sending a byte.
+test('uploads over 15 MB are refused', async ({ browser, baseURL }) => {
+    const maya = await newPerson(browser, 'Maya');
+    const code = await createRoom(maya.page);
+    const url = `/api/rooms/${code}/files`;
+    const upload = (name, size) => maya.page.request.post(url, {
+        headers: { 'X-File-Name': name, 'Content-Type': 'application/octet-stream' },
+        data: Buffer.alloc(size, 1)
+    });
+
+    expect((await upload('fits.bin', 15 * 1024 * 1024)).status()).toBe(201);
+    const big = await upload('too-big.bin', 15 * 1024 * 1024 + 1);
+    expect(big.status()).toBe(413);
+    expect((await big.json()).message).toContain('15 MB');
+
+    // A chunked body has no length to check up front, so it is refused before it is read.
+    const cookie = (await maya.context.cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
+    const status = await new Promise((resolve, reject) => {
+        const req = http.request(new URL(url, baseURL), {
+            method: 'POST',
+            headers: { cookie, 'X-File-Name': 'chunked.bin', 'Content-Type': 'application/octet-stream', 'Transfer-Encoding': 'chunked' }
+        }, (res) => { res.resume(); resolve(res.statusCode); });
+        req.on('error', reject);
+        req.write(Buffer.alloc(1024, 1));
+        req.end();
+    });
+    expect(status).toBe(411);
+
+    await openRoom(maya.page, code);
+    await expect(maya.page.locator('.card')).toHaveCount(1);
+    await maya.page.locator('#fileInput').setInputFiles({ name: 'huge-video.mp4', mimeType: 'video/mp4', buffer: Buffer.alloc(16 * 1024 * 1024, 1) });
+    await expect(maya.page.locator('.toast', { hasText: 'huge-video.mp4 is over the 15 MB limit' })).toBeVisible();
+    await maya.page.waitForTimeout(500);
+    await expect(maya.page.locator('.card')).toHaveCount(1);
+    await maya.context.close();
 });

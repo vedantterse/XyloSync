@@ -11,6 +11,8 @@ export const config = {
     maxRoomsPerUser: Number(env.MAX_ROOMS_PER_USER || 3),
     // Rooms delete themselves (files, chat, members) this long after creation. 0 keeps them forever.
     roomTtlHours: Number(env.ROOM_TTL_HOURS ?? 8),
+    // Largest single upload, in MB (files and mail attachments alike).
+    maxFileMb: Number(env.MAX_FILE_MB || 15),
 
     redisUrl: env.REDIS_URL || 'redis://localhost:6379',
 

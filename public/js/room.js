@@ -1,7 +1,7 @@
 import {
     $, $$, api, icon, mark, html, toast, avatar, escapeHtml, formatBytes, formatDuration, timeAgo,
     fileKind, extLabel, confirmDialog, openModal, hasOpenModal, openMenu, setupThemeToggle, loadSession,
-    session, copyText, uploadRaw, hydrateIcons, renameDialog
+    session, copyText, uploadRaw, hydrateIcons, renameDialog, allowedFiles
 } from './common.js';
 import { openNoteDialog, openMailDialog, handleMailStatus } from './compose.js';
 import { createChat } from './chat.js';
@@ -316,7 +316,7 @@ function updateTray() {
 }
 
 function enqueue(fileList) {
-    const files = [...fileList];
+    const files = allowedFiles(fileList);
     if (!files.length || !state.room) return;
     const t = ensureTray();
     t.el.classList.remove('collapsed');
