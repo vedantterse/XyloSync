@@ -2,12 +2,14 @@ import {
     $, $$, api, toast, html, icon, formatBytes, setupThemeToggle, loadSession, mark, extLabel, escapeHtml,
     hydrateIcons, openModal, confirmDialog
 } from './common.js';
+import { initStory } from './story.js';
 
 hydrateIcons();
 $$('[data-mark]').forEach((el) => { el.outerHTML = mark(); });
 setupThemeToggle($('#themeToggle'));
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const updateStory = initStory({ reducedMotion });
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (t) => Math.min(1, Math.max(0, t));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -52,6 +54,66 @@ function show(step) {
 const pinned = () => matchMedia('(min-width: 861px)').matches;
 let timer = null;
 
+/* ---------- scrubbed frames: each product fragment plays as you scroll through it ---------- */
+
+const shotParts = shots.map((shot) => ({
+    phone: $('.ui-phone', shot),
+    note: $('.ui-phone-note', shot),
+    rows: $$('.ui-row', shot),
+    msgs: $$('.ui-msg', shot),
+    react: $('.react', shot),
+    typing: $('.ui-typing', shot),
+    requests: $$('.ui-request', shot),
+    refused: $('.ui-refused', shot),
+    joiner: $('.joiner', shot)
+}));
+const easeOut = (t) => 1 - (1 - t) ** 3;
+const setTO = (el, y, o, extra = '') => {
+    if (!el) return;
+    el.style.transform = `translate3d(0, ${y}px, 0)${extra}`;
+    el.style.opacity = String(o);
+};
+
+function scrubShot(i, sp) {
+    const s = shotParts[i];
+    if (i === 1) {
+        // The phone tips up into view, then its rows arrive.
+        const e = easeOut(clamp01(sp / 0.55));
+        s.phone.style.transform = `perspective(1000px) rotateX(${(1 - e) * 26}deg) translate3d(0, ${(1 - e) * 60}px, 0) scale(${0.9 + 0.1 * e})`;
+        s.phone.style.opacity = String(0.25 + 0.75 * e);
+        s.rows.forEach((row, j) => { const k = easeOut(clamp01(sp * 2.2 - 0.3 - j * 0.22)); setTO(row, (1 - k) * 14, k); });
+        const n = easeOut(clamp01((sp - 0.45) / 0.3));
+        setTO(s.note, (1 - n) * 20, n);
+    } else if (i === 2) {
+        // Messages arrive one per stretch of scroll; the reaction pops, then someone types.
+        s.msgs.forEach((msg, j) => { const k = easeOut(clamp01(sp * 2.6 - j * 0.6)); setTO(msg, (1 - k) * 18, k); });
+        const r = clamp01((sp - 0.5) / 0.14);
+        if (s.react) {
+            s.react.style.transform = `scale(${0.5 + 0.5 * easeOut(r)})`;
+            s.react.style.opacity = String(r);
+        }
+        setTO(s.typing, 0, clamp01((sp - 0.78) / 0.12));
+    } else if (i === 3) {
+        // Requests slide in, a look-alike is turned away, then Dev is admitted and joins.
+        s.requests.forEach((req, j) => {
+            const k = easeOut(clamp01(sp * 2.6 - j * 0.35));
+            req.style.transform = `translate3d(${(1 - k) * 44}px, 0, 0)`;
+            req.style.opacity = String(k * (j === 0 && sp > 0.72 ? 0.35 : 1));
+        });
+        const admit = s.requests[0]?.querySelector('.ui-btn.dark');
+        if (admit) admit.textContent = sp > 0.72 ? 'Admitted' : 'Admit';
+        const f = clamp01((sp - 0.42) / 0.14);
+        setTO(s.refused, (1 - f) * 10, f);
+        const jn = easeOut(clamp01((sp - 0.74) / 0.16));
+        setTO(s.joiner, (1 - jn) * 10, jn);
+    }
+}
+
+function scrubReel(stepFloat) {
+    const step = Math.min(shots.length - 1, Math.floor(stepFloat));
+    for (let i = 1; i < shots.length; i++) scrubShot(i, i < step ? 1 : i > step ? 0 : stepFloat - step);
+}
+
 // The finale: once the last fragment has been seen, the sentence splits apart and the frame
 // grows to fill the screen in the close's colour, so the page flows into its last section.
 function finale(t) {
@@ -66,13 +128,15 @@ function finale(t) {
     renderScene(t);
 
     if (!t) { frame.style.transform = ''; frame.style.borderRadius = ''; return; }
-    // Measure the frame without its transform, then scale it to cover the viewport.
+    // Measure the frame without its transform, then scale it to cover its stage. Measuring
+    // against the stage (not the viewport) lets the frame leave with the stage when it unpins.
     frame.style.transform = 'none';
     const r = frame.getBoundingClientRect();
-    const sx = lerp(1, innerWidth / r.width, p);
-    const sy = lerp(1, innerHeight / r.height, p);
-    const dx = (innerWidth / 2 - (r.left + r.width / 2)) * p;
-    const dy = (innerHeight / 2 - (r.top + r.height / 2)) * p;
+    const st = stage.getBoundingClientRect();
+    const sx = lerp(1, st.width / r.width, p);
+    const sy = lerp(1, st.height / r.height, p);
+    const dx = (st.left + st.width / 2 - (r.left + r.width / 2)) * p;
+    const dy = (st.top + st.height / 2 - (r.top + r.height / 2)) * p;
     frame.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
     frame.style.borderRadius = `${lerp(8, 0, p) / Math.max(sx, sy)}px`;
 }
@@ -142,27 +206,46 @@ function renderScene(t) {
         : `Delivered to ${got} <span>of ${DEVICES.length} screens…</span>`;
 }
 
+const darkZone = $('#darkZone');
+const lede = $('.lede');
+
 function syncToScroll() {
-    const closeTop = $('#close').getBoundingClientRect().top;
-    let inverse = closeTop <= 64;
+    // The nav takes the dark field's colours anywhere over the dark run (and late in the finale).
+    const z = darkZone.getBoundingClientRect();
+    let inverse = z.top <= 64 && z.bottom > 64;
     if (pinned()) {
         const rect = story.getBoundingClientRect();
         const reelTravel = shots.length * 0.75 * innerHeight;
         const scrolled = -rect.top;
-        show(Math.floor(clamp01(scrolled / reelTravel - 0.0001) * shots.length));
+        const reelP = clamp01(scrolled / reelTravel - 0.0001);
+        show(Math.floor(reelP * shots.length));
+        if (!reducedMotion) {
+            scrubReel(reelP * shots.length);
+            // Depth: the sentence drifts apart and the frame comes closer while the reel plays.
+            halves.first.style.translate = `${-reelP * 2.5}vw 0`;
+            halves.second.style.translate = `${reelP * 2.5}vw 0`;
+            frame.style.scale = String(1 + reelP * 0.035);
+            lede.style.translate = `0 ${-reelP * 28}px`;
+            caption.style.translate = `0 ${reelP * 28}px`;
+        }
         const t = reducedMotion ? 0 : clamp01((scrolled - reelTravel) / (story.offsetHeight - innerHeight - reelTravel));
         finale(t);
         if (t > 0.45) inverse = true;
     }
     nav.classList.toggle('inverse', inverse);
+    updateStory();
 }
 
 function setMode() {
     clearInterval(timer);
+    stage.classList.toggle('scrub', pinned() && !reducedMotion);
     if (pinned()) {
         syncToScroll();
     } else {
         finale(0);
+        for (const el of [halves.first, halves.second, frame, lede, caption]) { el.style.translate = ''; el.style.scale = ''; }
+        for (let i = 1; i < shots.length; i++) scrubShot(i, 1);
+        updateStory();
         // Stacked layout: the frame steps on its own instead of following the scroll.
         timer = setInterval(() => show((current + 1) % shots.length), 4200);
     }
@@ -289,7 +372,7 @@ closeDigits.forEach((input) => { input.placeholder = String(Math.floor(Math.rand
 
 const privateToggles = [$('#privateRoom'), $('#privateRoomClose')];
 privateToggles.forEach((t) => t.addEventListener('change', () => privateToggles.forEach((o) => { o.checked = t.checked; })));
-const createButtons = [$('#createRoom'), $('#createRoomClose')];
+const createButtons = [$('#createRoom'), $('#createRoomClose'), $('#navCreate')];
 
 let rooms = [];
 let roomLimit = 3;
@@ -416,16 +499,15 @@ async function createRoom() {
 
 createButtons.forEach((b) => b.addEventListener('click', createRoom));
 $('#roomsMenu').addEventListener('click', async () => { await refreshRooms(); openRoomsDialog(); });
-$('#navCreate').addEventListener('click', (e) => {
-    e.preventDefault();
-    scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => $('#createRoom').focus({ preventScroll: true }), 300);
-});
+// Every "Create room" button creates a room straight away (or opens your rooms at the limit).
+$('#navCreate').addEventListener('click', (e) => { e.preventDefault(); createRoom(); });
 
 (async () => {
     try {
         await loadSession();
         await refreshRooms();
+        // /?rooms (linked from the room-limit message elsewhere) opens your rooms straight away.
+        if (new URLSearchParams(location.search).has('rooms')) openRoomsDialog({ atLimit: rooms.length >= roomLimit });
     } catch {
         /* the page works without the list */
     }

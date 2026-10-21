@@ -1,0 +1,441 @@
+/* How it works: the life of a file, told in four scroll-driven chapters. */
+
+.how { --margin: 32px; --gutter: 24px; --nav: 64px; font-size: 16px; line-height: 1.55; overflow-x: clip; }
+.mark { width: 22px; height: 22px; color: var(--text); --mark-ink: var(--ground); }
+
+/* ---------- nav ---------- */
+
+.nav {
+    position: fixed; inset: 0 0 auto; z-index: 20; height: var(--nav);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 var(--margin); background: var(--ground);
+}
+.wordmark { display: inline-flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.nav-links { display: flex; align-items: center; gap: 6px; }
+.nav-link { height: 32px; padding: 0 10px; border-radius: var(--radius-control); display: inline-flex; align-items: center; font-size: 15px; }
+@media (hover: hover) and (pointer: fine) { .nav-link:hover { background: var(--raised); } }
+
+/* ---------- headline reveal: each word rises out of its own mask ---------- */
+
+.rise .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.14em 0.05em 0.2em 0; margin: -0.14em 0 -0.2em; }
+.rise .wi { display: inline-block; transform: translateY(115%); transition: transform 900ms var(--ease-out); transition-delay: calc(var(--i, 0) * 70ms); }
+.rise .stop { color: var(--signal); }
+.rise.in .wi { transform: none; }
+
+/* ---------- intro ---------- */
+
+.intro { padding: 148px var(--margin) 72px; display: grid; gap: 28px; }
+.intro h1 { font-size: clamp(52px, 9vw, 152px); line-height: 0.92; font-weight: 600; letter-spacing: -0.05em; }
+.lede { max-width: 560px; font-size: 19px; line-height: 1.5; }
+
+/* ---------- chapter 1: the journey (pinned, scrubbed by scroll) ---------- */
+
+.journey { position: relative; height: 340svh; }
+.journey-pin {
+    position: sticky; top: var(--nav); height: calc(100svh - var(--nav));
+    display: grid; align-content: center; gap: 28px; padding: 0 var(--margin);
+}
+.journey-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+.journey-head h2 { font-size: clamp(32px, 3.6vw, 56px); line-height: 1; font-weight: 600; letter-spacing: -0.04em; }
+.journey-step { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.journey-step b { font-size: 40px; line-height: 1; font-weight: 600; letter-spacing: -0.03em; color: var(--text); }
+.machine { padding: 28px; border-radius: 14px; background: var(--surface); display: grid; gap: 36px; transition: box-shadow 200ms var(--ease-out); }
+.controls { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.controls .switch { font-size: 14px; color: var(--muted); }
+.speed-note { font-size: 13px; color: var(--muted); margin-left: auto; }
+
+.track-area { position: relative; padding: 12px 0 8px; }
+.stations { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.station { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; }
+/* The path between stations: dashed until the file has travelled it. The solid fill is drawn by .trail. */
+.station + .station::before {
+    content: ''; position: absolute; top: 36px; right: calc(50% + 40px); left: calc(-50% + 40px);
+    border-top: 1.5px dashed var(--control);
+}
+.trail { position: absolute; z-index: 1; left: 0; top: 0; height: 1.5px; background: var(--text); transform-origin: 0 50%; transform: scaleX(0); pointer-events: none; }
+
+.node {
+    position: relative; z-index: 2; display: grid; place-items: center; width: 72px; height: 72px; border-radius: 18px;
+    background: var(--ground); border: 1.5px solid var(--border); color: var(--muted);
+    transition: border-color 250ms var(--ease-out), color 250ms var(--ease-out), transform 250ms var(--ease-out);
+}
+.node .node-icon svg.icon { width: 24px; height: 24px; }
+.node .mark { width: 28px; height: 28px; }
+.station.reached .node { border-color: var(--text); color: var(--text); }
+.station.active .node { transform: scale(1.08); }
+.station.active .node::after {
+    content: ''; position: absolute; inset: -8px; border-radius: 24px; border: 1.5px solid var(--signal);
+    animation: ring 900ms ease-out infinite;
+}
+@keyframes ring { from { opacity: 1; transform: scale(0.9); } to { opacity: 0; transform: scale(1.15); } }
+.st-name { font-size: 14px; font-weight: 600; }
+.st-time { min-height: 18px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.parts { display: grid; grid-auto-flow: column; gap: 3px; width: 46px; height: 10px; }
+.parts i { border-radius: 2px; background: var(--raised); transition: background-color 150ms var(--ease-out); }
+.parts i.on { background: var(--text); }
+
+.devices { width: 112px; display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding-bottom: 14px; }
+.dev { position: relative; display: grid; place-items: center; border: 1.5px solid var(--control); border-radius: 4px; background: var(--surface); transition: border-color 250ms var(--ease-out); }
+.dev.laptop { width: 38px; height: 26px; }
+.dev.tablet { width: 22px; height: 30px; }
+.dev.phone { width: 14px; height: 26px; border-radius: 3px; }
+.dev i { width: 50%; height: 50%; border-radius: 2px; background: var(--text); opacity: 0; transform: scale(0.6); transition: opacity 250ms var(--ease-out), transform 300ms var(--ease-out); }
+.dev i::after { content: ''; position: absolute; top: 2px; right: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--signal); }
+.station.reached .dev { border-color: var(--text); }
+.station.reached .dev i { opacity: 1; transform: none; }
+.station.reached .dev.phone i { transition-delay: 90ms; }
+.station.reached .dev.tablet i { transition-delay: 180ms; }
+
+.packet {
+    position: absolute; left: 0; top: 0; z-index: 3; width: 38px; height: 46px; margin: -23px 0 0 -19px;
+    display: grid; place-items: center; border-radius: 6px; background: var(--text); color: var(--ground);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.02em; box-shadow: var(--float);
+    opacity: 0; transform: translate(var(--x, 0px), var(--y, 0px));
+    transition: transform var(--hop, 700ms) var(--ease-in-out), opacity 200ms var(--ease-out);
+}
+.packet::after { content: ''; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--signal); }
+.packet.on { opacity: 1; }
+/* While scroll drives it, the packet follows the page exactly instead of easing behind it. */
+.packet.scrub { transition: opacity 200ms var(--ease-out); }
+
+.readout { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end; }
+.explain { min-height: 104px; }
+.ex-title { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; margin-bottom: 6px; }
+.ex-text { color: var(--muted); max-width: 640px; }
+.clock { display: grid; justify-items: end; gap: 2px; text-align: right; }
+.clock-value { font-size: 56px; line-height: 1; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.clock-label { font-size: 13px; color: var(--muted); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+body.dropping .machine { box-shadow: 0 0 0 2px var(--signal); }
+
+/* ---------- chapter 2: two screens, one room ---------- */
+
+.sync { position: relative; height: 460svh; }
+.sync-pin {
+    position: sticky; top: var(--nav); height: calc(100svh - var(--nav));
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter);
+    align-items: center; padding: 0 var(--margin);
+}
+.sync-copy { grid-column: 1 / 6; display: grid; gap: 40px; }
+.sync h2, .lifetime h2, .names h2, .end h2 { font-size: clamp(40px, 6vw, 96px); line-height: 0.95; font-weight: 600; letter-spacing: -0.045em; }
+.sync h2 { font-size: clamp(40px, 4.6vw, 76px); }
+
+.beats { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+.beats li { position: relative; display: grid; gap: 4px; padding-left: 22px; opacity: 0.32; transition: opacity 300ms var(--ease-out); }
+/* Each beat has its own progress line, like a story. */
+.beats li::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--raised); }
+.beats li::after {
+    content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--signal);
+    transform-origin: 50% 0; transform: scaleY(var(--k, 0));
+}
+.beats li.on { opacity: 1; }
+.beats b { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+.beats span { color: var(--muted); max-width: 420px; }
+
+.sync-stage { grid-column: 6 / 13; position: relative; height: min(560px, calc(100svh - var(--nav) - 80px)); }
+.wire { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.wire path { fill: none; stroke: var(--control); stroke-width: 1.5; stroke-dasharray: 4 5; }
+.pulse {
+    position: absolute; left: 0; top: 0; z-index: 4; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: var(--signal); box-shadow: 0 0 0 5px color-mix(in srgb, var(--signal) 20%, transparent); opacity: 0;
+}
+.latency {
+    position: absolute; left: 0; top: 0; z-index: 4; padding: 3px 8px; border-radius: 999px;
+    background: var(--text); color: var(--ground); font: 600 12px/1.4 var(--mono); opacity: 0; white-space: nowrap;
+}
+
+.dev-frame {
+    position: absolute; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--float);
+}
+.laptop-frame { left: 0; top: 2%; width: 74%; height: 64%; border-radius: 12px; }
+.phone-frame { right: 0; bottom: 0; width: 34%; height: 78%; border-radius: 26px; border-width: 6px; border-color: var(--text); }
+.df-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.df-code { font: 600 12px/1 var(--mono); letter-spacing: 0.08em; }
+.df-who { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.df-body { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+.laptop-frame .df-body { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.df-files { display: grid; align-content: start; gap: 8px; padding: 12px; overflow: hidden; }
+.df-row {
+    position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 10px;
+    height: 46px; padding: 0 10px; border-radius: 8px; background: var(--ground); font-size: 13px; font-weight: 500;
+}
+.df-row b { display: grid; place-items: center; height: 30px; border-radius: 5px; background: var(--raised); font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+.df-row span { display: grid; min-width: 0; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.df-row small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.df-row i { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--signal); }
+.df-row.doomed { box-shadow: inset 0 0 0 1.5px var(--signal); }
+.laptop-frame .df-row i { display: none; }
+.df-chat { display: grid; align-content: end; gap: 8px; padding: 12px; border-left: 1px solid var(--border); overflow: hidden; }
+.phone-frame .df-chat { border-left: 0; border-top: 1px solid var(--border); }
+.df-msg { position: relative; justify-self: start; max-width: 92%; padding: 8px 10px; border-radius: 10px; background: var(--ground); font-size: 12.5px; line-height: 1.35; }
+.df-msg small { display: block; margin-top: 2px; font-size: 10.5px; color: var(--muted); }
+.df-msg.me { justify-self: end; background: var(--text); color: var(--ground); }
+.df-msg em {
+    position: absolute; right: -6px; bottom: -8px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--surface); box-shadow: 0 0 0 1px var(--border); color: var(--signal); font-style: normal; font-size: 11px; line-height: 1;
+}
+.df-compose { display: flex; align-items: center; min-height: 40px; margin: 0 10px 10px; padding: 0 12px; border-radius: 999px; background: var(--ground); font-size: 12.5px; white-space: nowrap; overflow: hidden; }
+.caret { width: 1.5px; height: 14px; margin-left: 1px; background: var(--text); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.ghost {
+    position: absolute; left: 18%; top: 22%; z-index: 5; display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px 10px 10px; border-radius: 8px; background: var(--surface); box-shadow: var(--float);
+    font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none;
+}
+.ghost b { display: grid; place-items: center; width: 34px; height: 30px; border-radius: 5px; background: var(--text); color: var(--ground); font-size: 9px; }
+
+/* ---------- chapter 3: rooms forget ---------- */
+
+.lifetime { position: relative; height: 260svh; margin-top: 40px; }
+.life-pin {
+    position: sticky; top: var(--nav); height: calc(100svh - var(--nav));
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: var(--gutter); padding: 48px var(--margin) 112px;
+}
+.life-copy { display: grid; gap: 16px; max-width: 760px; }
+.life-left { align-self: end; display: grid; justify-items: end; gap: 4px; text-align: right; }
+.life-left b { font-size: clamp(48px, 6vw, 96px); line-height: 1; font-weight: 600; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.life-left span { font-size: 15px; color: var(--muted); }
+.life-left.late b { color: var(--signal); }
+.life-copy p, .names-copy p { font-size: 19px; line-height: 1.5; max-width: 560px; }
+.life-strip { grid-column: 1 / -1; grid-row: 3; display: grid; gap: 14px; }
+.life-bar { position: relative; height: 10px; border-radius: 999px; background: var(--raised); }
+.life-fill { position: absolute; inset: 0; border-radius: inherit; background: var(--text); transform-origin: 0 50%; transform: scaleX(0); }
+.life-bar.late .life-fill { background: var(--signal); }
+.life-now { position: absolute; top: 50%; left: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 4px var(--ground); }
+.life-now b { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.life-ticks { position: relative; height: 20px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.life-ticks span { position: absolute; left: calc(var(--at) * 100%); transform: translateX(-50%); white-space: nowrap; }
+.life-ticks span::before { content: ''; position: absolute; left: 50%; top: -12px; width: 1px; height: 6px; background: var(--control); }
+.life-ticks span:first-child { transform: none; }
+.life-ticks span:first-child::before { left: 0; }
+.life-ticks span:last-child { transform: translateX(-100%); color: var(--text); font-weight: 600; }
+.life-ticks span:last-child::before { left: auto; right: 0; }
+.life-bottom { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-top: 8px; }
+.life-room {
+    display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 12px;
+    background: var(--surface); transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+}
+.lr-code { font: 600 18px/1 var(--mono); letter-spacing: 0.08em; }
+.lr-files { display: flex; gap: 6px; }
+.lr-files i { width: 20px; height: 26px; border-radius: 4px; background: var(--text); opacity: 0.15; transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out); }
+.lr-files i.on { opacity: 1; }
+.lr-state { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.life-room.warn .lr-state { color: var(--signal); }
+.life-room.gone { opacity: 0.35; transform: scale(0.97); }
+.life-room.gone .lr-files i { opacity: 0; transform: translateY(6px); }
+.life-room.gone .lr-code { text-decoration: line-through; }
+/* The things a deletion takes with it, struck out one after another at the eight-hour mark. */
+.wipe { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; }
+.wipe li { position: relative; color: var(--text); transition: color 300ms var(--ease-out); }
+.wipe li::after {
+    content: ''; position: absolute; left: -2px; right: -2px; top: 54%; height: 1.5px; background: var(--signal);
+    transform-origin: 0 50%; transform: scaleX(0); transition: transform 350ms var(--ease-out);
+}
+.wipe li.wiped { color: var(--muted); }
+.wipe li.wiped::after { transform: scaleX(1); }
+
+/* ---------- chapter 4: names ---------- */
+
+.names { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); row-gap: 40px; padding: 160px var(--margin) 0; align-items: center; }
+.names-copy { grid-column: 1 / 7; display: grid; gap: 20px; }
+.names-demo { grid-column: 8 / 13; display: grid; gap: 18px; padding: 28px; border-radius: 14px; background: var(--surface); }
+.in-room { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.ir-label { width: 100%; font-size: 13px; color: var(--muted); }
+.ir-person { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: color 200ms var(--ease-out); }
+.ir-person.clash { color: var(--signal); }
+.ir-person.clash .avatar { box-shadow: 0 0 0 2px var(--signal); }
+.verdict { min-height: 48px; font-size: 15px; color: var(--muted); }
+.verdict.ok { color: var(--positive); }
+.verdict.no { color: var(--signal); }
+.suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: -6px; font-size: 13px; color: var(--muted); }
+.suggest button {
+    height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--control); background: var(--surface);
+    color: var(--text); font: 500 13px/1 var(--font); cursor: pointer; transition: border-color 150ms var(--ease-out), transform 120ms var(--ease-out);
+}
+.suggest button:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .suggest button:hover { border-color: var(--text); } }
+.ask-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ask-state { font-size: 14px; color: var(--muted); }
+.ask-state.waiting::before {
+    content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--signal);
+    vertical-align: 1px; animation: breathe 1.2s ease-in-out infinite;
+}
+@keyframes breathe { 50% { opacity: 0.3; } }
+.ask-state.in { color: var(--positive); }
+
+/* ---------- end ---------- */
+
+.end {
+    margin-top: 180px; padding: 120px var(--margin) 28px; min-height: 80svh;
+    display: grid; grid-template-rows: 1fr auto auto; gap: 48px;
+    background: var(--text); color: var(--ground);
+}
+.end-row { display: flex; align-items: end; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+.end-row p { font-size: 20px; max-width: 520px; }
+.orb {
+    position: relative; flex: none; width: 176px; height: 176px; border-radius: 50%;
+    display: grid; place-content: center; justify-items: center; gap: 10px;
+    background: var(--signal); color: #fff;
+    font-size: 19px; line-height: 1.1; font-weight: 600; letter-spacing: -0.01em; text-align: center;
+    transform: translate(var(--mx, 0px), var(--my, 0px));
+    transition: transform 400ms var(--ease-out);
+}
+.orb .orb-arrow svg.icon { width: 22px; height: 22px; stroke-width: 2; transition: transform 300ms var(--ease-out); }
+.orb:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(0.96); }
+.orb:disabled { opacity: 0.6; }
+@media (hover: hover) and (pointer: fine) { .orb:hover .orb-arrow svg.icon { transform: translateX(6px); } }
+.foot { display: flex; justify-content: space-between; gap: 24px; padding-top: 20px; font-size: 13px; opacity: 0.7; }
+.foot a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- chapter pill ---------- */
+
+.chapters {
+    position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 15;
+    display: flex; gap: 2px; padding: 4px; border-radius: 999px;
+    background: var(--surface); box-shadow: var(--float);
+    opacity: 0; transform: translate(-50%, 16px); pointer-events: none;
+    transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out);
+}
+.chapters.shown { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.chapters button {
+    position: relative; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+    border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+    font: 500 13px/1 var(--font); white-space: nowrap; cursor: pointer;
+    transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+.chapters button.on { background: var(--raised); color: var(--text); }
+@media (hover: hover) and (pointer: fine) { .chapters button:hover { color: var(--text); } }
+.chapters i { position: relative; width: 14px; height: 14px; border-radius: 50%; overflow: hidden; background: var(--raised); }
+.chapters button.on i { background: var(--control); }
+.chapters i::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--signal); transform: scale(var(--k, 0)); }
+.chapters button.done i::after { transform: scale(1); background: var(--text); }
+
+/* ---------- phones ---------- */
+
+@media (max-width: 860px) {
+    .how { --margin: 16px; --nav: 56px; }
+    .nav { height: var(--nav); }
+    .nav-link { display: none; }
+    .intro { padding-top: 104px; padding-bottom: 48px; }
+
+    /* The pipeline runs top to bottom, small enough to stay pinned on a phone. */
+    .journey { height: 320svh; }
+    .machine { padding: 16px; gap: 16px; }
+    .journey-pin { gap: 16px; }
+    .journey-head h2 { font-size: 26px; }
+    .journey-step { font-size: 13px; }
+    .journey-step b { font-size: 26px; }
+    .controls { gap: 12px 16px; }
+    .controls .btn.lg { height: 40px; }
+    .speed-note { margin-left: 0; width: 100%; font-size: 12.5px; }
+    .track-area { padding: 0; }
+    .stations { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .station { grid-template-columns: 48px minmax(0, 1fr) auto; justify-items: start; align-items: center; text-align: left; gap: 14px; }
+    .station + .station::before { top: -12px; bottom: auto; left: 24px; right: auto; height: 12px; border-top: 0; border-left: 1.5px dashed var(--control); }
+    .trail { width: 1.5px; height: auto; transform-origin: 50% 0; transform: scaleY(0); }
+    .node { width: 48px; height: 48px; border-radius: 13px; }
+    .station.active .node::after { inset: -6px; border-radius: 17px; }
+    .node .node-icon svg.icon { width: 20px; height: 20px; }
+    .node .mark { width: 22px; height: 22px; }
+    .parts { width: 32px; height: 8px; gap: 2px; }
+    .devices { width: 48px; padding-bottom: 0; gap: 2px; }
+    .dev.laptop { width: 20px; height: 14px; }
+    .dev.tablet { width: 11px; height: 16px; }
+    .dev.phone { width: 8px; height: 14px; border-radius: 2px; }
+    .dev i::after { display: none; }
+    .packet { width: 28px; height: 34px; margin: -17px 0 0 -14px; font-size: 8px; }
+    .packet::after { top: 4px; right: 4px; width: 5px; height: 5px; }
+    .readout { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+    .explain { min-height: 116px; }
+    .ex-title { font-size: 16px; }
+    .ex-text { font-size: 13px; line-height: 1.45; }
+    .clock-value { font-size: 30px; }
+    .clock .clock-label { max-width: 110px; font-size: 11px; }
+    .clock .clock-label:first-child { display: none; }
+
+    /* Two screens: one beat at a time above a smaller stage. */
+    .sync { height: 440svh; }
+    .sync-pin { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; row-gap: 20px; padding-top: 24px; padding-bottom: 76px; }
+    .sync-copy, .sync-stage { grid-column: auto; }
+    .sync-copy { gap: 16px; }
+    .sync h2 { font-size: 36px; }
+    .beats { display: grid; grid-template-areas: 'beat'; gap: 0; }
+    .beats li { grid-area: beat; opacity: 0; transform: translateY(8px); transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out); }
+    .beats li.on { opacity: 1; transform: none; }
+    .beats b { font-size: 16px; }
+    .beats span { font-size: 14px; }
+    .sync-stage { height: auto; min-height: 300px; }
+    /* Side by side, no overlap: the laptop stacks its files above its chat. */
+    .laptop-frame { width: 57%; height: 76%; top: 0; }
+    .laptop-frame .df-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+    .laptop-frame .df-chat { border-left: 0; border-top: 1px solid var(--border); }
+    .laptop-frame .df-who { display: none; }
+    .phone-frame { width: 40%; height: 88%; border-width: 4px; border-radius: 20px; }
+    .df-bar { padding: 8px 10px; font-size: 10.5px; }
+    .df-code { font-size: 10.5px; }
+    .phone-frame .df-who { display: none; }
+    .df-files { gap: 6px; padding: 8px; }
+    .df-row { height: 36px; grid-template-columns: 24px minmax(0, 1fr); gap: 7px; padding: 0 7px; font-size: 11px; }
+    .df-row b { height: 22px; font-size: 7px; }
+    .df-row small { font-size: 9.5px; }
+    .df-row i { top: 6px; right: 6px; width: 6px; height: 6px; }
+    .df-chat { gap: 6px; padding: 8px; }
+    .df-msg { padding: 6px 8px; font-size: 10.5px; }
+    .df-msg small { font-size: 9px; }
+    .df-msg em { width: 16px; height: 16px; font-size: 9px; }
+    .df-compose { min-height: 30px; margin: 0 6px 6px; padding: 0 9px; font-size: 10.5px; }
+    .ghost { font-size: 11px; padding: 7px 10px 7px 7px; }
+    .ghost b { width: 26px; height: 22px; font-size: 7px; }
+
+    .lifetime { height: 240svh; margin-top: 24px; }
+    .life-pin { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 20px; padding: 32px var(--margin) 84px; }
+    .life-copy p { font-size: 16px; }
+    .life-left { grid-row: 2; justify-items: start; text-align: left; }
+    .life-left b { font-size: 44px; }
+    .life-left span { font-size: 13px; }
+    .life-strip { grid-row: 4; }
+    .life-ticks span:nth-child(2), .life-ticks span:nth-child(4) { color: transparent; }
+    .life-bottom { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .wipe { font-size: 13px; gap: 6px 14px; }
+
+    .names { grid-template-columns: minmax(0, 1fr); padding-top: 120px; }
+    .names-copy, .names-demo { grid-column: auto; }
+    .names-demo { padding: 20px 16px; }
+    .end { margin-top: 120px; padding-top: 80px; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+    .orb { width: 132px; height: 132px; font-size: 16px; }
+    .foot { flex-direction: column; gap: 6px; }
+
+    .chapters button { padding: 0 10px; }
+    .chapters button span { display: none; }
+    .chapters button.on span { display: inline; }
+}
+
+/* Short desktop windows: the machine is too tall to pin, so it scrolls past and scrubs as it goes. */
+.journey.unpinned { height: auto; }
+.journey.unpinned .journey-pin { position: static; height: auto; padding-top: 40px; padding-bottom: 40px; }
+
+/* ---------- reduced motion: every chapter in its finished state, nothing pinned ---------- */
+
+.still .rise .wi { transform: none; transition: none; }
+.still .journey { height: auto; }
+.still .journey-pin { position: static; height: auto; }
+.still .sync { height: auto; }
+.still .sync-pin { position: static; height: auto; padding-top: 80px; padding-bottom: 80px; }
+.still .beats li { opacity: 1; transform: none; }
+.still .beats li::after { transform: none; }
+.still .lifetime { height: auto; }
+.still .life-pin { position: static; height: auto; row-gap: 56px; }
+.still .chapters { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .packet { transition: opacity 150ms linear; }
+    .station.active .node::after, .caret, .ask-state.waiting::before { animation: none; }
+}
+@media (max-width: 860px) {
+    .still .beats { grid-template-areas: none; gap: 16px; }
+    .still .beats li { grid-area: auto; }
+    .still .sync-stage { height: 360px; }
+}

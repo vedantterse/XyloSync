@@ -52,6 +52,7 @@ app.use('/api', (req, res) => res.status(404).json({ success: false, message: 'N
 const page = (file) => (req, res) => res.sendFile(path.join(publicDir, file));
 app.get('/', page('index.html'));
 app.get('/room/:code', page('room.html'));
+app.get(['/how', '/how-it-works'], page('how.html'));
 // Old XyloSync URLs.
 app.get(['/homepage', '/homepage.html', '/index.html'], (req, res) => res.redirect(301, '/'));
 app.use((req, res) => res.status(404).sendFile(path.join(publicDir, 'index.html')));

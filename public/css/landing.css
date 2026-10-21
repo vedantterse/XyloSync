@@ -347,19 +347,133 @@
     .ui-phone-note { display: none; }
     .close { min-height: 0; padding-top: 96px; gap: 40px; }
     .close h2 { font-size: 15vw; }
-    .close-grid { grid-template-columns: 1fr; }
+    /* minmax(0, 1fr): never let a child's natural width push the column past the screen. */
+    .close-grid { grid-template-columns: minmax(0, 1fr); }
     .close-copy, .close-switch { grid-column: auto; grid-row: auto; font-size: 17px; }
     .close-switch { font-size: 14px; }
     .close-actions { grid-column: auto; grid-row: auto; justify-self: stretch; flex-direction: column; align-items: flex-start; gap: 28px; }
     .orb { width: 132px; height: 132px; font-size: 16px; }
     .code.big { width: 100%; }
-    .code.big input { flex: 1; width: auto; height: 72px; font-size: 34px; }
+    /* Inputs have a built-in default width; flex-basis 0 + min-width 0 lets five share the row. */
+    .code.big input { flex: 1 1 0; min-width: 0; width: 0; height: 68px; font-size: 32px; }
+    .close-actions > * { max-width: 100%; }
+    .close-join { width: 100%; }
     .foot { flex-direction: column; gap: 6px; }
     .nav-link { padding: 0 8px; }
-    .nav-link[href='#story'] { display: none; }
+    .nav-link[href='/how'] { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .shot { transition: opacity 200ms linear; transform: none !important; }
     .reveal { opacity: 1; transform: none; }
 }
+
+/* ==========================================================================
+   The dark run: after the finale the page stays on the close's field and
+   tells the rest of the story with scroll-driven chapters.
+   ========================================================================== */
+
+.dark-zone { background: var(--text); color: var(--ground); overflow-x: clip; }
+.dark-zone h2 { font-size: clamp(40px, 6vw, 96px); line-height: 0.95; font-weight: 600; letter-spacing: -0.045em; }
+.dark-zone .av {
+    display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: hsl(var(--hue) 55% 82%); color: hsl(var(--hue) 45% 22%); font-size: 11px; font-weight: 600;
+}
+.pin { position: sticky; top: 0; height: 100svh; }
+
+/* ---------- statement: four phrases, word by word ---------- */
+
+.statement { position: relative; height: 420svh; }
+.statement .pin { overflow: hidden; }
+.phrase { position: absolute; left: var(--margin); right: var(--margin); top: 50%; transform: translateY(-50%); }
+.phrase .words { font-size: clamp(56px, 12.5vw, 210px); line-height: 0.95; font-weight: 600; letter-spacing: -0.055em; }
+/* Each word sits in a mask tall enough for its ascenders and descenders, so a word that
+   has risen in or left is fully inside or fully outside it — never half-clipped. */
+.phrase .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.14em 0.05em 0.2em 0; margin: -0.14em 0 -0.2em; }
+.phrase .wi { display: inline-block; transform: translateY(120%); }
+.phrase .stop { color: var(--signal); }
+.phrase .sub { margin-top: 32px; font-size: clamp(17px, 1.5vw, 22px); line-height: 1.45; max-width: 560px; opacity: 0; }
+
+/* ---------- a day in a room: sideways while the clock runs ---------- */
+
+.day { position: relative; height: 480svh; }
+.day .pin { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 28px; padding: 96px 0 40px; overflow: hidden; }
+.day-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 0 var(--margin); }
+.day-clock { font-size: clamp(48px, 7.5vw, 124px); line-height: 0.9; font-weight: 600; letter-spacing: -0.04em; color: var(--signal); font-variant-numeric: tabular-nums; }
+.day-viewport { display: flex; align-items: center; min-height: 0; min-width: 0; }
+.day-track { display: flex; gap: 28px; margin: 0; padding: 0 var(--margin); list-style: none; will-change: transform; }
+.day-card {
+    flex: none; width: min(440px, 72vw); height: min(400px, 52svh);
+    display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; padding: 28px;
+    border-radius: 18px; background: color-mix(in srgb, var(--ground) 9%, var(--text));
+}
+.dc-time { font-size: 14px; opacity: 0.6; font-variant-numeric: tabular-nums; }
+.day-card h3 { font-size: clamp(26px, 2.4vw, 34px); line-height: 1.05; font-weight: 600; letter-spacing: -0.03em; }
+.dc-ui { align-self: end; display: grid; gap: 12px; font-size: 15px; }
+.dc-code { font: 600 clamp(56px, 6vw, 88px)/1 var(--mono); letter-spacing: 0.06em; }
+.dc-chip { justify-self: start; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--ground) 14%, transparent); font-size: 13px; }
+.dc-people { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.dc-person { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+.dc-file { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.dc-file b { display: grid; place-items: center; width: 40px; height: 48px; border-radius: 6px; background: var(--ground); color: var(--text); font-size: 11px; }
+.dc-bar { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--ground) 16%, transparent); overflow: hidden; }
+.dc-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ground); transform-origin: left; transform: scaleX(0); }
+.dc-amount { font-size: 14px; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.dc-chat { gap: 8px; }
+.dc-msg { justify-self: start; max-width: 85%; padding: 9px 13px; border-radius: 14px 14px 14px 4px; background: color-mix(in srgb, var(--ground) 15%, transparent); }
+.dc-msg.me { justify-self: end; border-radius: 14px 14px 4px 14px; background: var(--ground); color: var(--text); }
+.dc-knock { grid-template-columns: auto 1fr auto; align-items: center; }
+.dc-who { display: grid; font-weight: 600; }
+.dc-who small { font-weight: 400; opacity: 0.65; font-size: 13px; }
+.dc-btn { padding: 8px 14px; border-radius: 8px; background: var(--ground); color: var(--text); font-weight: 600; font-size: 14px; }
+.dc-warn { grid-template-columns: auto 1fr; align-items: start; padding: 14px; border-radius: 12px; background: color-mix(in srgb, var(--signal) 22%, transparent); }
+.dc-warn i { width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: var(--signal); }
+.day-card.gone { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ground) 22%, transparent); }
+.dc-gone s { font: 600 clamp(48px, 5vw, 72px)/1 var(--mono); letter-spacing: 0.06em; opacity: 0.35; text-decoration-color: var(--signal); text-decoration-thickness: 4px; }
+.dc-gone span { opacity: 0.75; }
+.day-progress { margin: 0 var(--margin); height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ground) 14%, transparent); overflow: hidden; }
+.day-progress span { display: block; height: 100%; background: var(--signal); transform-origin: left; transform: scaleX(0); }
+
+/* ---------- numbers ---------- */
+
+.numbers { padding: 160px var(--margin) 40px; }
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px var(--gutter); margin-top: 72px; }
+.fig { display: flex; align-items: baseline; gap: 8px; font-size: clamp(64px, 8.5vw, 148px); line-height: 1; font-weight: 600; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
+.fig small { font-size: 0.28em; letter-spacing: 0; opacity: 0.6; }
+.fig-label { margin-top: 16px; max-width: 250px; font-size: 16px; line-height: 1.45; opacity: 0.75; }
+.inf { width: 1.75em; height: 0.82em; overflow: visible; }
+.inf path { fill: none; stroke: currentColor; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+
+/* The close now sits inside the dark run; it keeps its own spacing. */
+.dark-zone .close { background: transparent; }
+
+/* ---------- phones and reduced motion: no sideways pin, the story reads top to bottom ---------- */
+
+@media (max-width: 860px) {
+    .statement { height: 360svh; }
+    .day { height: auto; }
+    .day .pin { position: static; height: auto; overflow: visible; padding: 96px 0 24px; }
+    .day-head { position: sticky; top: 64px; z-index: 2; padding: 12px var(--margin); background: var(--text); flex-wrap: wrap; }
+    .day-track { flex-direction: column; gap: 20px; transform: none !important; }
+    .day-card { width: 100%; height: auto; min-height: 250px; }
+    .day-progress { display: none; }
+    .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fig { font-size: 15vw; }
+    .numbers { padding-top: 120px; }
+}
+
+.still .statement { height: auto; }
+.still .statement .pin { position: static; height: auto; display: grid; gap: 72px; padding: 140px var(--margin); }
+.still .phrase { position: static; transform: none; }
+.still .phrase .wi { transform: none; }
+.still .phrase .sub { opacity: 1; }
+.still .day { height: auto; }
+.still .day .pin { position: static; height: auto; overflow: visible; }
+.still .day-track { flex-wrap: wrap; transform: none !important; }
+.still .dc-bar i, .still .day-progress span { transform: none; }
+.still .inf path { stroke-dashoffset: 0; }
+
+/* On desktop the later frames are played by the scroll, not by a timer. */
+.stage.scrub .shot:not(.shot-room) * { animation: none !important; }
+.ui-members .joiner { display: inline-flex; align-items: center; gap: 8px; }
+.ui-members .joiner .av { margin-left: 6px; }

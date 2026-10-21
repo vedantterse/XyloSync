@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>How XyloSync works — the life of a file</title>
+    <meta name="description" content="Follow one file from your screen to every screen in a XyloSync room: streamed upload, storage, a webhook and a live socket, in about 60 ms after the upload finishes.">
+    <meta name="theme-color" content="#f6f6f4">
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+    <link rel="preload" href="/vendor/geist/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/how.css">
+    <script src="/js/theme.js"></script>
+    <script type="module" src="/js/how.js"></script>
+</head>
+<body class="how">
+    <header class="nav">
+        <a class="wordmark" href="/" aria-label="XyloSync home"><span data-mark></span>XyloSync</a>
+        <nav class="nav-links">
+            <a class="nav-link" href="/">Home</a>
+            <button class="btn quiet icon" id="themeToggle" type="button"></button>
+            <button class="btn primary" type="button" data-create>Create room</button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="intro" id="intro">
+            <h1 class="rise" id="introTitle">The life of a file.</h1>
+            <p class="lede">Follow one file from your screen to every screen in the room. Scroll to move it along, send a sample, or drop your own anywhere on this page — it never leaves your device.</p>
+        </section>
+
+        <!-- The journey: scrolling carries a file through the real pipeline, station by station. -->
+        <section class="journey" id="journey" aria-labelledby="journeyTitle" data-chapter="The journey">
+            <div class="journey-pin">
+                <div class="journey-head">
+                    <h2 class="rise" id="journeyTitle">From your screen to every screen.</h2>
+                    <p class="journey-step" aria-hidden="true"><b id="stepNow">0</b> / 6</p>
+                </div>
+                <div class="machine">
+                    <div class="controls">
+                        <button class="btn primary lg" id="sendSample" type="button">Send a sample file</button>
+                        <label class="switch">
+                            <input type="checkbox" id="realSpeed">
+                            <span class="track"></span>
+                            <span>Real speed</span>
+                        </label>
+                        <p class="speed-note" id="speedNote">Scroll to move the file, or send one and watch.</p>
+                    </div>
+
+                    <div class="track-area" id="trackArea">
+                        <ol class="stations" id="stations">
+                            <li class="station" data-key="browser">
+                                <span class="node"><span class="node-icon" data-icon="upload"></span></span>
+                                <span class="st-name">Your browser</span>
+                                <span class="st-time" data-time></span>
+                            </li>
+                            <li class="station" data-key="app">
+                                <span class="node"><span data-mark></span></span>
+                                <span class="st-name">XyloSync</span>
+                                <span class="st-time" data-time></span>
+                            </li>
+                            <li class="station" data-key="storage">
+                                <span class="node"><span class="parts" id="parts"></span></span>
+                                <span class="st-name">Storage</span>
+                                <span class="st-time" data-time></span>
+                            </li>
+                            <li class="station" data-key="webhook">
+                                <span class="node"><span class="node-icon" data-icon="link"></span></span>
+                                <span class="st-name">Webhook</span>
+                                <span class="st-time" data-time></span>
+                            </li>
+                            <li class="station" data-key="socket">
+                                <span class="node"><span class="node-icon" data-icon="chat"></span></span>
+                                <span class="st-name">Live socket</span>
+                                <span class="st-time" data-time></span>
+                            </li>
+                            <li class="station screens" data-key="screens">
+                                <span class="node devices">
+                                    <span class="dev laptop"><i></i></span>
+                                    <span class="dev phone"><i></i></span>
+                                    <span class="dev tablet"><i></i></span>
+                                </span>
+                                <span class="st-name">Every screen</span>
+                                <span class="st-time" data-time></span>
+                            </li>
+                        </ol>
+                        <div class="packet" id="packet" aria-hidden="true"><b id="packetExt">PDF</b></div>
+                    </div>
+
+                    <div class="readout">
+                        <div class="explain" aria-live="polite">
+                            <p class="ex-title" id="exTitle">Ready when you are.</p>
+                            <p class="ex-text" id="exText">Scroll down and the file moves with you. Nothing is uploaded — this is a model of what happens inside a room.</p>
+                        </div>
+                        <div class="clock">
+                            <span class="clock-label" id="fileLabel">Q3 report.pdf · 2.3 MB</span>
+                            <span class="clock-value"><span id="clock">0</span> ms</span>
+                            <span class="clock-label" id="clockNote">from the first byte</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Two screens, one room: what "live" looks like from two devices at once. -->
+        <section class="sync" id="sync" aria-labelledby="syncTitle" data-chapter="In sync">
+            <div class="sync-pin">
+                <div class="sync-copy">
+                    <h2 class="rise" id="syncTitle">Two screens, one room.</h2>
+                    <ol class="beats">
+                        <li data-beat><b>Upload once.</b><span>Maya drops a plan on her laptop. Arjun’s phone has it before he looks up.</span></li>
+                        <li data-beat><b>Answer anywhere.</b><span>Arjun replies from his phone. The laptop shows it the moment he sends.</span></li>
+                        <li data-beat><b>React.</b><span>One tap on a heart, and every screen in the room sees it.</span></li>
+                        <li data-beat><b>Delete everywhere.</b><span>The owner removes a file and it disappears from every screen at once.</span></li>
+                    </ol>
+                </div>
+                <div class="sync-stage" id="syncStage" aria-hidden="true">
+                    <svg class="wire" id="wire"><path id="wirePath" /></svg>
+                    <span class="pulse" id="pulse"></span>
+                    <span class="latency" id="latency">58 ms</span>
+
+                    <div class="dev-frame laptop-frame" data-ui id="laptop">
+                        <div class="df-bar"><span class="df-code">48213</span><span class="df-who">Maya’s laptop</span></div>
+                        <div class="df-body">
+                            <div class="df-files">
+                                <div class="df-row incoming" data-new><b>PDF</b><span>floor-plan.pdf<small>2.3 MB · Maya</small></span><i></i></div>
+                                <div class="df-row" data-gone><b>JPG</b><span>site-visit.jpg<small>4.1 MB · Arjun</small></span></div>
+                                <div class="df-row"><b>DOCX</b><span>brief-v3.docx<small>88 KB · Lena</small></span></div>
+                            </div>
+                            <div class="df-chat">
+                                <div class="df-msg">Plan’s in the room.<small>Maya</small></div>
+                                <div class="df-msg them" data-reply>Got it — looks right.<small>Arjun</small><em data-heart>♥</em></div>
+                            </div>
+                        </div>
+                        <div class="ghost" id="ghost"><b>PDF</b>floor-plan.pdf</div>
+                    </div>
+
+                    <div class="dev-frame phone-frame" data-ui id="phone">
+                        <div class="df-bar"><span class="df-code">48213</span><span class="df-who">Arjun’s phone</span></div>
+                        <div class="df-body">
+                            <div class="df-files">
+                                <div class="df-row incoming" data-new><b>PDF</b><span>floor-plan.pdf<small>just now · Maya</small></span><i></i></div>
+                                <div class="df-row" data-gone><b>JPG</b><span>site-visit.jpg<small>4.1 MB</small></span></div>
+                                <div class="df-row"><b>DOCX</b><span>brief-v3.docx<small>88 KB</small></span></div>
+                            </div>
+                            <div class="df-chat">
+                                <div class="df-msg them">Plan’s in the room.<small>Maya</small></div>
+                                <div class="df-msg me" data-reply>Got it — looks right.<em data-heart>♥</em></div>
+                            </div>
+                            <div class="df-compose"><span id="typing"></span><i class="caret"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rooms forget: an 8-hour lifetime, scrubbed by scrolling. -->
+        <section class="lifetime" id="lifetime" aria-labelledby="lifeTitle" data-chapter="Rooms forget">
+            <div class="life-pin">
+            <div class="life-copy">
+                <h2 class="rise" id="lifeTitle">Rooms forget.</h2>
+                <p>Every room deletes itself eight hours after it’s made — files, chat, the people list, everything. Nothing to clean up and nothing left behind on the server.</p>
+            </div>
+            <p class="life-left" aria-hidden="true"><b id="lifeLeft">8 h 00 min</b><span id="lifeLeftNote">until room 48213 deletes itself</span></p>
+            <div class="life-strip" aria-hidden="true">
+                <div class="life-bar"><span class="life-fill" id="lifeFill"></span><span class="life-now" id="lifeNow"><b id="lifeClock">0 h 00 min</b></span></div>
+                <div class="life-ticks"><span style="--at:0">0 h</span><span style="--at:0.25">2 h</span><span style="--at:0.5">4 h</span><span style="--at:0.75">6 h</span><span style="--at:1">8 h</span></div>
+                <div class="life-bottom">
+                    <div class="life-room" id="lifeRoom">
+                        <span class="lr-code">48213</span>
+                        <span class="lr-files"><i></i><i></i><i></i><i></i></span>
+                        <span class="lr-state" id="lifeState">Live</span>
+                    </div>
+                    <ul class="wipe" id="wipe">
+                        <li>Files</li>
+                        <li>Chat history</li>
+                        <li>Reactions</li>
+                        <li>People and requests</li>
+                    </ul>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- Private rooms: the same name rule the server applies, as a small simulation. -->
+        <section class="names" aria-labelledby="namesTitle" data-chapter="No look-alikes" id="names">
+            <div class="names-copy">
+                <h2 class="rise" id="namesTitle">No look-alikes.</h2>
+                <p>In a private room, people wait until the owner lets them in, and they have to pick a name nobody in the room is using — capital letters don’t count. Try it against this room.</p>
+            </div>
+            <div class="names-demo">
+                <div class="in-room">
+                    <span class="ir-label">In room 48213</span>
+                    <span class="ir-person"><span class="avatar" style="--hue:0">MA</span>Maya</span>
+                    <span class="ir-person"><span class="avatar" style="--hue:120">AR</span>Arjun</span>
+                    <span class="ir-person"><span class="avatar" style="--hue:240">LE</span>Lena</span>
+                    <span class="ir-person ir-you" id="youJoined" hidden><span class="avatar" style="--hue:30" id="youAvatar">YO</span><span id="youName">You</span></span>
+                </div>
+                <label class="field">
+                    <span class="label">Your name in this room</span>
+                    <input class="input" id="nameTry" maxlength="32" placeholder="Try “maya” or your own name" autocomplete="off">
+                </label>
+                <p class="verdict" id="verdict" aria-live="polite">Type a name to see if you could ask to join.</p>
+                <div class="suggest" id="suggest" hidden></div>
+                <div class="ask-row">
+                    <button class="btn primary" id="askJoin" type="button" disabled>Ask to join</button>
+                    <span class="ask-state" id="askState"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="end" id="end">
+            <h2 class="rise">Try it with a real room.</h2>
+            <div class="end-row">
+                <p>Make a room, read the five digits out loud, and drop something in.</p>
+                <button class="orb" type="button" data-create><span class="orb-text">Create<br>a room</span><span class="orb-arrow" data-icon="arrowRight"></span></button>
+            </div>
+            <footer class="foot">
+                <span>XyloSync runs on your own Docker Compose stack — MinIO, Redis and Caddy.</span>
+                <a href="/">Back to XyloSync</a>
+            </footer>
+        </section>
+    </main>
+
+    <nav class="chapters" id="chapters" aria-label="Chapters"></nav>
+</body>
+</html>

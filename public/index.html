@@ -18,9 +18,9 @@
         <a class="wordmark" href="/" aria-label="XyloSync home"><span data-mark></span>XyloSync</a>
         <nav class="nav-links">
             <button class="nav-link" id="roomsMenu" type="button" hidden>Rooms <span class="nav-count" id="roomsCount"></span></button>
-            <a class="nav-link" href="#story">How it works</a>
+            <a class="nav-link" href="/how">How it works</a>
             <button class="btn quiet icon" id="themeToggle" type="button"></button>
-            <a class="btn primary" href="#start" id="navCreate">Create room</a>
+            <button class="btn primary" type="button" id="navCreate">Create room</button>
         </nav>
     </header>
 
@@ -100,13 +100,115 @@
                             <div class="ui-request"><span class="av" style="--hue:30">SR</span><span class="n">Sana R.<span class="m">asked 1 min ago</span></span><span class="ui-btn">Deny</span><span class="ui-btn dark">Admit</span></div>
                             <p class="ui-refused">“maya” was turned away — Maya is already in this room.</p>
                             <p class="ui-h ui-h2">In this room</p>
-                            <div class="ui-members"><span class="av" style="--hue:0">MA</span>Maya<span class="av" style="--hue:120">AR</span>Arjun<span class="av" style="--hue:270">LE</span>Lena</div>
+                            <div class="ui-members"><span class="av" style="--hue:0">MA</span>Maya<span class="av" style="--hue:120">AR</span>Arjun<span class="av" style="--hue:270">LE</span>Lena<span class="joiner"><span class="av" style="--hue:210">DK</span>Dev Kapoor</span></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="scene" id="scene" aria-hidden="true"></div>
                 <p class="caption" id="caption" aria-live="polite">Files land on every screen in the room the moment they finish uploading. Drop any file on this page to watch it happen.</p>
+            </div>
+        </section>
+
+        <!-- From here the page stays on the dark field the finale opened into. -->
+        <div class="dark-zone" id="darkZone">
+
+        <!-- Four phrases rise word by word as you scroll, then leave upwards. -->
+        <section class="statement" id="statement" aria-labelledby="statementTitle">
+            <h2 class="sr-only" id="statementTitle">What XyloSync leaves out</h2>
+            <div class="pin">
+                <div class="phrase" data-phrase>
+                    <p class="words">No accounts.</p>
+                    <p class="sub">Open the link or type five digits. That’s the whole sign-up.</p>
+                </div>
+                <div class="phrase" data-phrase>
+                    <p class="words">No app.</p>
+                    <p class="sub">It’s a web page. Phones, laptops, tablets — anything with a browser.</p>
+                </div>
+                <div class="phrase" data-phrase>
+                    <p class="words">No size limit.</p>
+                    <p class="sub">Files stream straight into storage, from a one-line note to a 40 GB video.</p>
+                </div>
+                <div class="phrase" data-phrase>
+                    <p class="words">Nothing kept.</p>
+                    <p class="sub">Eight hours after a room is made, it deletes itself: files, chat and people.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- A pinned, sideways walk through one room's day while the clock runs. -->
+        <section class="day" id="day" aria-labelledby="dayTitle">
+            <div class="pin">
+                <div class="day-head">
+                    <h2 id="dayTitle">A day in a room.</h2>
+                    <p class="day-clock" aria-hidden="true"><span id="dayClock">09:00</span></p>
+                </div>
+                <div class="day-viewport">
+                    <ol class="day-track" id="dayTrack">
+                        <li class="day-card" data-card="open">
+                            <span class="dc-time">09:00</span>
+                            <h3>The room opens.</h3>
+                            <div class="dc-ui"><span class="dc-code">48213</span><span class="dc-chip">Deletes at 17:00</span></div>
+                        </li>
+                        <li class="day-card" data-card="join">
+                            <span class="dc-time">09:02</span>
+                            <h3>Read it out once.</h3>
+                            <div class="dc-ui dc-people">
+                                <span class="dc-person"><span class="av" style="--hue:0">MA</span>Maya</span>
+                                <span class="dc-person"><span class="av" style="--hue:120">AR</span>Arjun</span>
+                                <span class="dc-person"><span class="av" style="--hue:270">LE</span>Lena</span>
+                            </div>
+                        </li>
+                        <li class="day-card" data-card="upload">
+                            <span class="dc-time">10:15</span>
+                            <h3>3.2 GB, no complaints.</h3>
+                            <div class="dc-ui dc-upload">
+                                <span class="dc-file"><b>MP4</b>site-walkthrough.mp4</span>
+                                <span class="dc-bar"><i></i></span>
+                                <span class="dc-amount"><span data-amount>0.0</span> GB of 3.2 GB</span>
+                            </div>
+                        </li>
+                        <li class="day-card" data-card="chat">
+                            <span class="dc-time">11:40</span>
+                            <h3>Talk about it right there.</h3>
+                            <div class="dc-ui dc-chat">
+                                <span class="dc-msg">Is the drone shot in there?</span>
+                                <span class="dc-msg me">Minute 4. It’s good.</span>
+                            </div>
+                        </li>
+                        <li class="day-card" data-card="knock">
+                            <span class="dc-time">13:20</span>
+                            <h3>Someone knocks.</h3>
+                            <div class="dc-ui dc-knock">
+                                <span class="av" style="--hue:30">SR</span>
+                                <span class="dc-who">Sana R.<small>wants to join</small></span>
+                                <span class="dc-btn">Admit</span>
+                            </div>
+                        </li>
+                        <li class="day-card" data-card="warn">
+                            <span class="dc-time">16:45</span>
+                            <h3>Fifteen minutes left.</h3>
+                            <div class="dc-ui dc-warn"><i></i>This room deletes itself in 15 min. Download anything you need.</div>
+                        </li>
+                        <li class="day-card gone" data-card="gone">
+                            <span class="dc-time">17:00</span>
+                            <h3>Gone.</h3>
+                            <div class="dc-ui dc-gone"><s>48213</s><span>Files, chat and people — deleted. Nothing left on the server.</span></div>
+                        </li>
+                    </ol>
+                </div>
+                <div class="day-progress" aria-hidden="true"><span id="dayBar"></span></div>
+            </div>
+        </section>
+
+        <!-- The numbers, counted by the scroll. -->
+        <section class="numbers" id="numbers" aria-labelledby="numbersTitle">
+            <h2 id="numbersTitle">By the numbers.</h2>
+            <div class="figures">
+                <div class="figure" data-count-to="60"><p class="fig"><span data-value>0</span><small>ms</small></p><p class="fig-label">from an upload finishing to every screen showing it</p></div>
+                <div class="figure" data-count-to="8"><p class="fig"><span data-value>0</span><small>h</small></p><p class="fig-label">until the room deletes itself, with everything in it</p></div>
+                <div class="figure" data-count-from="100" data-count-to="0"><p class="fig"><span data-value>100</span></p><p class="fig-label">accounts you need to make — counting down to the real number</p></div>
+                <div class="figure figure-inf"><p class="fig"><svg class="inf" viewBox="0 0 120 56" aria-hidden="true"><path pathLength="1" d="M60 28c-9-12-17-18-27-18a18 18 0 1 0 0 36c10 0 18-6 27-18zm0 0c9 12 17 18 27 18a18 18 0 1 0 0-36c-10 0-18 6-27 18z"/></svg><span class="sr-only">Unlimited</span></p><p class="fig-label">size limit on a single file</p></div>
             </div>
         </section>
 
@@ -141,6 +243,7 @@
                 <span>Made by Vedantterse</span>
             </footer>
         </section>
+        </div>
     </main>
 </body>
 </html>

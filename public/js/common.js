@@ -223,27 +223,130 @@ export async function copyText(text) {
 }
 
 /* ---------- toasts ---------- */
+// Top-right stack in the spirit of Sonner: new toasts slide in from the right and sit in
+// front; older ones tuck in behind, smaller, and fan out when hovered. Transitions (not
+// keyframes) so rapid toasts retarget smoothly; timers pause on hover and in hidden tabs.
 
-let toastRoot;
-export function toast(message, type = 'info', { duration = 3200, action } = {}) {
-    toastRoot ||= document.body.appendChild(html`<div class="toasts" role="status" aria-live="polite"></div>`);
-    const el = html`<div class="toast ${type === 'error' ? 'error' : ''}"><span></span></div>`;
-    el.firstElementChild.textContent = message;
-    const dismiss = () => {
-        if (el.classList.contains('out')) return;
-        el.classList.add('out');
-        el.addEventListener('animationend', () => el.remove(), { once: true });
+const TOAST_GAP = 10;
+const TOAST_PEEK = 12;
+const TOAST_VISIBLE = 3;
+const toastState = { root: null, items: [], expanded: false };
+
+function toastRoot() {
+    if (toastState.root) return toastState.root;
+    const root = html`<ol class="toasts" aria-live="polite" aria-label="Notifications"></ol>`;
+    root.addEventListener('pointerenter', () => { toastState.expanded = true; layoutToasts(); pauseToasts(true); });
+    root.addEventListener('pointerleave', () => { toastState.expanded = false; layoutToasts(); pauseToasts(false); });
+    document.addEventListener('visibilitychange', () => pauseToasts(document.hidden || toastState.expanded));
+    document.body.append(root);
+    toastState.root = root;
+    return root;
+}
+
+function layoutToasts() {
+    const { items, expanded, root } = toastState;
+    const front = items[0];
+    let offset = 0;
+    items.forEach((t, i) => {
+        const hidden = i >= TOAST_VISIBLE;
+        t.el.style.zIndex = String(100 - i);
+        t.el.dataset.front = String(i === 0);
+        if (expanded) {
+            t.el.style.height = `${t.height}px`;
+            t.el.style.transform = `translate3d(${t.dragX}px, ${offset}px, 0)`;
+            t.el.style.opacity = hidden ? '0' : '1';
+            offset += t.height + TOAST_GAP;
+        } else {
+            // Collapsed: older toasts take the front toast's height and peek out underneath it.
+            t.el.style.height = `${front.height}px`;
+            t.el.style.transform = `translate3d(${t.dragX}px, ${i * TOAST_PEEK}px, 0) scale(${1 - i * 0.05})`;
+            t.el.style.opacity = hidden ? '0' : '1';
+        }
+        t.el.classList.toggle('behind', !expanded && i > 0);
+        t.el.style.pointerEvents = hidden ? 'none' : '';
+    });
+    // Keeps the hover alive across the gaps between expanded toasts.
+    root.style.height = items.length ? `${expanded ? offset : front.height + Math.min(items.length - 1, TOAST_VISIBLE - 1) * TOAST_PEEK}px` : '0px';
+}
+
+function pauseToasts(paused) {
+    for (const t of toastState.items) {
+        if (paused && t.timer) {
+            clearTimeout(t.timer);
+            t.timer = null;
+            t.remaining -= Date.now() - t.startedAt;
+        } else if (!paused && !t.timer && t.remaining > 0) {
+            t.startedAt = Date.now();
+            t.timer = setTimeout(t.dismiss, t.remaining);
+        }
+    }
+}
+
+export function toast(message, type = 'info', { duration = 4000, action } = {}) {
+    const root = toastRoot();
+    const el = html`
+        <li class="toast ${type === 'error' ? 'error' : type === 'success' ? 'success' : ''}" role="status">
+            <span class="toast-dot" aria-hidden="true"></span>
+            <span class="toast-msg"></span>
+        </li>`;
+    el.querySelector('.toast-msg').textContent = message;
+
+    const item = { el, height: 0, dragX: 0, timer: null, remaining: duration, startedAt: Date.now() };
+    item.dismiss = () => {
+        if (item.gone) return;
+        item.gone = true;
+        clearTimeout(item.timer);
+        el.style.transform = `translate3d(calc(100% + 32px), ${el.style.transform.match(/,\s*([-\d.]+px)/)?.[1] || '0px'}, 0)`;
+        el.style.opacity = '0';
+        toastState.items = toastState.items.filter((t) => t !== item);
+        layoutToasts();
+        setTimeout(() => el.remove(), 400);
     };
     if (action) {
-        const btn = html`<button class="btn" type="button"></button>`;
+        const btn = html`<button class="toast-action" type="button"></button>`;
         btn.textContent = action.label;
-        btn.addEventListener('click', () => { action.onClick(); dismiss(); });
+        btn.addEventListener('click', () => { action.onClick(); item.dismiss(); });
         el.append(btn);
     }
-    toastRoot.append(el);
-    while (toastRoot.children.length > 3) toastRoot.firstElementChild.remove();
-    setTimeout(dismiss, duration);
-    return dismiss;
+    const close = html`<button class="toast-close" type="button" aria-label="Dismiss">${icon('x', 'sm')}</button>`;
+    close.addEventListener('click', item.dismiss);
+    el.append(close);
+
+    // Swipe right to dismiss — the same direction the toast came from.
+    let startX = null;
+    el.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return;
+        startX = e.clientX;
+        el.setPointerCapture(e.pointerId);
+        el.classList.add('dragging');
+    });
+    el.addEventListener('pointermove', (e) => {
+        if (startX === null) return;
+        item.dragX = Math.max(0, e.clientX - startX);
+        layoutToasts();
+    });
+    const endDrag = () => {
+        if (startX === null) return;
+        startX = null;
+        el.classList.remove('dragging');
+        if (item.dragX > 70) return item.dismiss();
+        item.dragX = 0;
+        layoutToasts();
+    };
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+
+    // Enter from the right edge, then let the layout transition move it into place.
+    el.style.transform = 'translate3d(calc(100% + 32px), 0, 0)';
+    el.style.opacity = '0';
+    root.prepend(el);
+    item.height = el.getBoundingClientRect().height;
+    toastState.items.unshift(item);
+    while (toastState.items.length > TOAST_VISIBLE + 2) toastState.items.at(-1).dismiss();
+    requestAnimationFrame(() => requestAnimationFrame(layoutToasts));
+
+    if (!toastState.expanded && !document.hidden) item.timer = setTimeout(item.dismiss, duration);
+    return item.dismiss;
 }
 
 /* ---------- menus ---------- */

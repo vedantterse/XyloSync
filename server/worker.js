@@ -72,7 +72,7 @@ async function sendMail(job) {
         const delivered = new Set(job.data.delivered || []);
         for (const to of recipients) {
             if (delivered.has(to)) continue;
-            await transporter.sendMail({
+            const info = await transporter.sendMail({
                 from: config.mail.from,
                 to,
                 subject,
@@ -80,6 +80,8 @@ async function sendMail(job) {
                 text,
                 attachments: [{ filename: zipName, path: zipPath, contentType: 'application/zip' }]
             });
+            // What the mail server said: the first place to look when an email doesn't arrive.
+            console.log(`[mail] ${job.id} -> ${to}: ${info.response} (from ${config.mail.from})`);
             delivered.add(to);
             await job.updateData({ ...job.data, delivered: [...delivered] });
         }
@@ -141,6 +143,11 @@ const sweep = async () => {
 };
 const sweeper = setInterval(sweep, 20_000);
 sweep();
+
+// Check the SMTP settings once at start-up so a wrong host or password shows up in the logs.
+transporter.verify()
+    .then(() => console.log(`[mail] SMTP ready: ${config.mail.host}:${config.mail.port} as ${config.mail.user || '(no login)'}, sending from ${config.mail.from}`))
+    .catch((err) => console.error(`[mail] SMTP check failed for ${config.mail.host}:${config.mail.port}: ${err.message}`));
 
 console.log(`[worker] XyloSync worker ready · rooms expire after ${config.roomTtlHours || '∞'} h`);
 
