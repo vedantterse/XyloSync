@@ -3,6 +3,7 @@ import {
     fileKind, extLabel, confirmDialog, openModal, hasOpenModal, openMenu, setupThemeToggle, loadSession,
     session, copyText, uploadRaw, hydrateIcons, renameDialog, allowedFiles
 } from './common.js';
+import { drawsPdfItself, pdfView } from './pdf-view.js';
 import { openNoteDialog, openMailDialog, handleMailStatus } from './compose.js';
 import { createChat } from './chat.js';
 
@@ -466,6 +467,8 @@ function openPreview(name) {
     preview = { el };
     const stage = el.querySelector('.stage');
     const show = (i) => {
+        preview.media?.destroy();
+        preview.media = null;
         index = (i + list.length) % list.length;
         const f = list[index];
         el.querySelector('.title strong').textContent = f.name;
@@ -479,7 +482,10 @@ function openPreview(name) {
         if (isImage(f)) media = Object.assign(new Image(), { src, alt: f.name });
         else if (kind === 'video') media = Object.assign(document.createElement('video'), { src, controls: true, autoplay: true, playsInline: true });
         else if (kind === 'audio') media = Object.assign(document.createElement('audio'), { src, controls: true, autoplay: true });
-        else if (kind === 'pdf') media = Object.assign(document.createElement('iframe'), { src, title: f.name });
+        else if (kind === 'pdf' && drawsPdfItself()) {
+            preview.media = pdfView(src, { onError: (box) => box.append(downloadButton(f)) });
+            media = preview.media.el;
+        } else if (kind === 'pdf') media = Object.assign(document.createElement('iframe'), { src, title: f.name });
         else if (['text', 'code'].includes(kind) || ['csv', 'tsv'].includes(fileKind(f.name).ext) || f.type.startsWith('text/')) {
             media = document.createElement('pre');
             media.textContent = 'Loading…';
@@ -489,10 +495,7 @@ function openPreview(name) {
                 .catch(() => { media.textContent = 'Could not load a preview.'; });
         } else {
             media = html`<div class="none"><span class="ext">${escapeHtml(extLabel(f.name))}</span><p>There’s no preview for this kind of file.</p></div>`;
-            const b = html`<a class="btn primary">${icon('download', 'sm')}Download ${escapeHtml(formatBytes(f.size))}</a>`;
-            b.href = fileUrl(f.name);
-            b.setAttribute('download', f.name);
-            media.append(b);
+            media.append(downloadButton(f));
         }
         stage.replaceChildren(media);
         if (list.length > 1) {
@@ -511,10 +514,32 @@ function openPreview(name) {
     });
     el.querySelector('[data-close]').addEventListener('click', closePreview);
     stage.addEventListener('click', (e) => { if (e.target === stage) closePreview(); });
+
+    // Phones have no arrow keys or side buttons: a sideways swipe moves to the next or previous file.
+    let touch = null;
+    stage.addEventListener('touchstart', (e) => {
+        touch = e.touches.length === 1 && !e.target.closest('video, audio')
+            ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+    }, { passive: true });
+    stage.addEventListener('touchend', (e) => {
+        if (!touch || list.length < 2) return;
+        const dx = e.changedTouches[0].clientX - touch.x;
+        const dy = e.changedTouches[0].clientY - touch.y;
+        touch = null;
+        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) show(index + (dx < 0 ? 1 : -1));
+    }, { passive: true });
     show(index);
 }
 
+function downloadButton(f) {
+    const b = html`<a class="btn primary">${icon('download', 'sm')}Download ${escapeHtml(formatBytes(f.size))}</a>`;
+    b.href = fileUrl(f.name);
+    b.setAttribute('download', f.name);
+    return b;
+}
+
 function closePreview() {
+    preview?.media?.destroy();
     preview?.el.remove();
     preview = null;
 }

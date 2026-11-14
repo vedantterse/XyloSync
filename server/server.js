@@ -42,6 +42,17 @@ app.use(createWebhooks(io));
 app.use(securityHeaders);
 app.use('/vendor/geist', express.static(fontDir('geist'), { maxAge: '30d', immutable: true }));
 app.use('/vendor/geist-mono', express.static(fontDir('geist-mono'), { maxAge: '30d', immutable: true }));
+// PDF.js draws PDFs on phones, whose browsers can't show one inside a page. Served from our own
+// node_modules like the fonts; .mjs needs an explicit JavaScript type for module loading.
+const pdfjsDir = (...parts) => path.join(__dirname, '..', 'node_modules', 'pdfjs-dist', ...parts);
+const vendorOptions = {
+    maxAge: '30d',
+    immutable: true,
+    setHeaders: (res, file) => { if (file.endsWith('.mjs')) res.setHeader('Content-Type', 'text/javascript; charset=utf-8'); }
+};
+app.use('/vendor/pdfjs/build', express.static(pdfjsDir('legacy', 'build'), vendorOptions));
+app.use('/vendor/pdfjs/cmaps', express.static(pdfjsDir('cmaps'), vendorOptions));
+app.use('/vendor/pdfjs/standard_fonts', express.static(pdfjsDir('standard_fonts'), vendorOptions));
 // maxAge 0 + ETag: browsers revalidate, so a rebuilt image never serves stale JS/CSS.
 app.use(express.static(publicDir, { index: false, maxAge: 0 }));
 

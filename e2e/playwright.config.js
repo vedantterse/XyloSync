@@ -19,6 +19,6 @@ export default defineConfig({
     },
     projects: [
         { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
-        { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /(landing|visual)\.spec\.js/ }
+        { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /(landing|visual|preview)\.spec\.js/ }
     ]
 });

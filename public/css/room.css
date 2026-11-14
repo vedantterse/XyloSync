@@ -202,7 +202,7 @@
 .preview header { display: flex; align-items: center; gap: 10px; padding: 0 12px 0 18px; }
 .preview .title { flex: 1; min-width: 0; display: grid; }
 .preview .title strong { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.preview .title span { font-size: 12px; color: #a3a3a0; }
+.preview .title span { font-size: 12px; color: #a3a3a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .preview .btn { background: transparent; border-color: #3a3a3a; color: #f4f4f2; }
 .preview .btn.primary { background: #f4f4f2; color: #0a0a0a; border-color: #f4f4f2; }
 .preview .stage { position: relative; display: grid; place-items: center; min-height: 0; padding: 16px 72px 24px; }
@@ -215,6 +215,11 @@
 .preview .nav.next { right: 16px; }
 .preview .none { display: grid; justify-items: center; gap: 14px; color: #a3a3a0; }
 .preview .none .ext { font-size: 40px; font-weight: 600; color: #f4f4f2; letter-spacing: -0.02em; }
+/* PDFs drawn by PDF.js (phones): pages stacked full width, scrolling inside the preview. */
+.preview .stage > .pdf-pages { width: min(1000px, 100%); height: 100%; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 10px; }
+.pdf-page { width: 100%; border-radius: 4px; background: #fff; overflow: hidden; }
+.pdf-page canvas { display: block; width: 100%; height: auto; }
+.pdf-status { padding: 40px 0; text-align: center; color: #a3a3a0; display: grid; justify-items: center; gap: 14px; }
 
 /* ---------- people popover & request cards ---------- */
 
@@ -415,7 +420,11 @@
     .grid.list .meta { display: block; }
     .grid.list .col { display: none; }
     .tray { left: 12px; right: 12px; width: auto; bottom: 12px; }
-    .preview .stage { padding: 8px; }
+    .preview { grid-template-rows: calc(56px + env(safe-area-inset-top)) minmax(0, 1fr); background: #0a0a0a; }
+    .preview header { gap: 6px; padding: env(safe-area-inset-top) 8px 0 14px; }
+    .preview header [data-download] { width: 36px; padding: 0; justify-content: center; }
+    .preview header [data-download] span { display: none; }
+    .preview .stage { padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); }
     .preview .nav { display: none; }
     .tools .btn.primary .btn-text { display: none; }
     .tools .btn.primary { width: 32px; padding: 0; }
