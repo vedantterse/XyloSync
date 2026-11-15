@@ -159,9 +159,11 @@ jobs:
       - name: Check the live site
         if: steps.ready.outputs.ok == 'true'
         run: |
-          for _ in $(seq 1 20); do
-            if curl -fsS https://xylosync.in/healthz; then exit 0; fi
-            sleep 6
+          # Each try is capped: without --max-time, a domain still pointing at a dead server hangs
+          # curl for minutes per attempt. About two minutes in total.
+          for _ in $(seq 1 12); do
+            if curl -fsS --connect-timeout 5 --max-time 10 https://xylosync.in/healthz; then exit 0; fi
+            sleep 5
           done
           echo "::warning::https://xylosync.in/healthz did not answer (DNS or certificate may still be setting up)."
 
