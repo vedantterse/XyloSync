@@ -114,22 +114,32 @@ test('uploads over 15 MB are refused', async ({ browser, baseURL }) => {
     });
 
     expect((await upload('fits.bin', 15 * 1024 * 1024)).status()).toBe(201);
-    const big = await upload('too-big.bin', 15 * 1024 * 1024 + 1);
-    expect(big.status()).toBe(413);
-    expect((await big.json()).message).toContain('15 MB');
 
-    // A chunked body has no length to check up front, so it is refused before it is read.
+    // The rest goes over a raw connection: the server answers from the headers alone and closes
+    // without reading the body, which a client still busy sending would see as a broken pipe.
     const cookie = (await maya.context.cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
-    const status = await new Promise((resolve, reject) => {
+    const send = (headers, body = Buffer.alloc(0)) => new Promise((resolve, reject) => {
         const req = http.request(new URL(url, baseURL), {
             method: 'POST',
-            headers: { cookie, 'X-File-Name': 'chunked.bin', 'Content-Type': 'application/octet-stream', 'Transfer-Encoding': 'chunked' }
-        }, (res) => { res.resume(); resolve(res.statusCode); });
+            headers: { cookie, 'Content-Type': 'application/octet-stream', ...headers }
+        }, (res) => {
+            let text = '';
+            res.on('data', (chunk) => { text += chunk; });
+            res.on('end', () => resolve({ status: res.statusCode, text }));
+        });
         req.on('error', reject);
-        req.write(Buffer.alloc(1024, 1));
-        req.end();
+        req.write(body);
+        // Leave an oversized body unsent: the answer has to come before any of it is read.
+        if (!headers['Content-Length']) req.end();
     });
-    expect(status).toBe(411);
+
+    const big = await send({ 'X-File-Name': 'too-big.bin', 'Content-Length': String(15 * 1024 * 1024 + 1) });
+    expect(big.status).toBe(413);
+    expect(JSON.parse(big.text).message).toContain('15 MB');
+
+    // A chunked body has no length to check up front, so it is refused before it is read.
+    const chunked = await send({ 'X-File-Name': 'chunked.bin', 'Transfer-Encoding': 'chunked' }, Buffer.alloc(1024, 1));
+    expect(chunked.status).toBe(411);
 
     await openRoom(maya.page, code);
     await expect(maya.page.locator('.card')).toHaveCount(1);
