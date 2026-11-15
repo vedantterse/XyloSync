@@ -3,8 +3,9 @@
 #
 #   IMAGE_TAG (in .env) picks the app version. deploy.sh sets it; rollback.sh moves it back.
 #
-# Memory caps keep the whole stack inside a 1 GB VM (plus swap). Measured idle use is about
-# 190 MB in total; the caps leave room for large uploads.
+# Memory caps keep the whole stack inside a 1 GB VM plus swap (Oracle Cloud's Always Free
+# VM.Standard.E2.1.Micro). Measured idle use is about 190 MB in total; the caps leave room for
+# uploads. On a bigger machine (e.g. an Ampere A1 with 6-12 GB) these can be raised.
 name: xylosync
 
 x-app-env: &app-env

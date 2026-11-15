@@ -173,7 +173,7 @@ go over Socket.IO.
 
 Production runs on one small VM behind Caddy (automatic HTTPS). Every push to `main` is tested,
 built into an image by GitHub Actions and deployed over SSH, with automatic and one-click rollback.
-Step-by-step guide for Azure and `xylosync.in`: [deploy/README.md](deploy/README.md).
+Step-by-step guide for Oracle Cloud (free) and `xylosync.in`: [deploy/README.md](deploy/README.md).
 
 ## Project layout
 

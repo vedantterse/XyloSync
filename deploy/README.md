@@ -1,4 +1,4 @@
-# Deploying XyloSync to Azure (xylosync.in)
+# Deploying XyloSync to Oracle Cloud, free (xylosync.in)
 
 One small VM runs everything: Caddy (HTTPS), the app, the worker, Redis and MinIO. GitHub Actions
 tests and builds every push to `main`, pushes the image to GitHub's container registry (GHCR), then
@@ -15,77 +15,95 @@ git push main ─▶ GitHub Actions: e2e tests ─▶ build image ─▶ ghcr.io
 You don't configure a GitHub webhook. The push itself starts the workflow, and the workflow
 reaches the VM over SSH, so the VM needs no extra listener or open port.
 
-## What it costs (Central India, pay as you go)
+## What it costs: nothing (Oracle Cloud "Always Free")
 
-| Item | Choice | ≈ per month |
+| Item | Always Free allowance | XyloSync uses |
 | --- | --- | --- |
-| VM | **B2ats_v2** — 2 vCPU, 1 GiB RAM (+2 GB swap) | ₹374 |
-| OS disk | 30 GiB Standard SSD (holds everything; rooms empty themselves after 8 h) | ~₹200 |
-| Public IP | Standard, static | ~₹300 |
-| Outbound data | First 100 GB/month free, then pay per GB | ₹0 for light use |
+| VM | `VM.Standard.E2.1.Micro` (AMD): 1 GB RAM, up to two VMs; or Ampere A1 (ARM) up to 2 OCPU / 12 GB | one E2.1.Micro (+2 GB swap) |
+| Disk | 200 GB of boot and block volumes | 50 GB boot volume |
+| Outbound data | 10 TB per month | downloads and pages |
+| Public IP | one per VM | yes |
 
-- **Free tier:** a new Azure free account covers B2ats_v2 (750 h/month) and SSD disks for 12 months.
-- **Why B2ats_v2:** the whole stack uses about 190 MB at idle, and every service has a memory cap, so
-  1 GiB plus swap is enough.
-- **When to upgrade:** if you see memory pressure, resize to **B2als_v2** (4 GiB, ~₹1,494). Stop the
-  VM, change the size, start it again; nothing else changes.
-- **Pick the "a" sizes:** B2ats/B2als are AMD and cost about half of B2ts/B2ls for the same spec.
-- **Watch outbound data:** it's the cost that grows with use, because every download leaves Azure.
+- **Which VM:** the Ampere A1 is far bigger, but Mumbai is often *out of host capacity* for it.
+  The E2.1.Micro is usually available, and the memory caps are sized for it. If you get an A1
+  later, nothing else changes: GitHub Actions builds the app for both `linux/amd64` and
+  `linux/arm64`, and Caddy, Redis and MinIO all publish ARM images. Just raise the caps.
+- **Home region matters:** Always Free Ampere VMs exist only in the home region you pick at
+  sign-up, and that can't be changed later. If creating the VM says *out of host capacity*, try
+  another availability domain or try again later.
+- **Idle reclamation:** Oracle may reclaim an Always Free VM that is idle for 7 days (CPU,
+  network *and* memory all under 20%). A quiet site can look idle. Upgrading the account to
+  **Pay As You Go** keeps Always Free resources free; check Oracle's billing page before you
+  rely on that. Set a budget alert of ₹0/$1 so you'd hear about any charge.
+- **Memory caps:** every service has a cap that fits a 1 GB VM plus swap, so one can't starve the others.
 
-Cheaper alternatives if you aren't tied to Azure:
-
-- **Oracle Cloud "Always Free":** an Ampere ARM VM with up to 24 GB RAM at no cost. Set
-  `platforms: linux/arm64` in the workflow.
-- **Hetzner CX22:** 4 GB RAM for about €4.
-
-The same files work on any Ubuntu VM.
+The same files work on any Ubuntu VM (x86 or ARM).
 
 ## Step by step
 
-### 1. Create the VM (Azure portal → Virtual machines → Create)
+### 1. Create the VM (Oracle Cloud console → Compute → Instances → Create instance)
 
-- **Region:** Central India (or the region closest to your users)
-- **Image:** Ubuntu Server 24.04 LTS, x64
-- **Size:** B2ats_v2
-- **Authentication:** SSH public key; username `azureuser`. Download the key Azure creates, or paste
-  your own.
-- **Inbound ports:** SSH (22), HTTP (80), HTTPS (443)
-- **Disks:** OS disk 30 GiB, *Standard SSD (LRS)*, "Delete with VM"
-- **Monitoring:** boot diagnostics off (saves a storage account)
+- **Name:** `xylosync`
+- **Image:** *Change image* → **Canonical Ubuntu 24.04** (the aarch64 build is picked for you
+  once the shape is Ampere)
+- **Shape:** *Change shape* → **Specialty and previous generation** → `VM.Standard.E2.1.Micro`
+  (it should say "Always Free-eligible"). If Ampere capacity is available, `VM.Standard.A1.Flex`
+  with 1-2 OCPUs is better.
+- **Networking:** first create the network with **Networking → Virtual cloud networks → Start VCN
+  Wizard → Create VCN with Internet Connectivity**. Then pick that VCN and its **public subnet**
+  here and switch on **Automatically assign public IPv4 address**. (Creating the network inside
+  this form leaves the public IP switch greyed out.)
+- **SSH keys:** *Paste public keys* → paste the contents of your `.pub` deploy key (see step 5)
+- **Boot volume:** the default 50 GB is plenty
 
-After it's created, make the IP static so DNS never breaks: VM → *Networking* → click the public
-IP → *Configuration* → Assignment **Static** → Save. Note the IP address.
+Click **Create** and wait until it says *Running*. Note the **Public IP address** on the instance
+page. The username is `ubuntu`.
 
-*(Optional, enables HTTP/3: in the VM's network security group, add an inbound rule allowing
-**UDP 443**.)*
+*(Optional, keeps the same IP even if you recreate the VM: Networking → IP management →
+Reserved public IPs → reserve one, then attach it to the instance's VNIC.)*
 
-### 2. Point the domain at it
+### 2. Open ports 80 and 443 in Oracle's network
 
-At your domain registrar, in the DNS settings for `xylosync.in`:
+Oracle blocks everything except SSH by default, in two places. The setup script (step 4) handles
+the firewall inside the server; this is the one in the cloud network:
 
-| Type | Name | Value | TTL |
+Instance page → **Subnet** link → **Security Lists** → *Default Security List* → **Add Ingress
+Rules**, and add:
+
+| Source CIDR | IP protocol | Destination port |
+| --- | --- | --- |
+| `0.0.0.0/0` | TCP | `80` |
+| `0.0.0.0/0` | TCP | `443` |
+| `0.0.0.0/0` | UDP | `443` (optional, enables HTTP/3) |
+
+### 3. Point the domain at it
+
+In Cloudflare's DNS for `xylosync.in`, edit both records to the new IP and keep them **DNS only**
+(grey cloud). Caddy gets the HTTPS certificate itself, and that needs to reach the server directly.
+
+| Type | Name | Value | Proxy |
 | --- | --- | --- | --- |
-| A | `@` | *the VM's IP* | 300 |
-| A | `www` | *the VM's IP* | 300 |
+| A | `@` | *the VM's IP* | DNS only |
+| A | `www` | *the VM's IP* | DNS only |
 
-Check it from your PC with `nslookup xylosync.in`; it should return the VM's IP before you deploy.
-Caddy needs that in order to get the HTTPS certificate.
+Check it from your PC with `nslookup xylosync.in`; it should return the new IP before you deploy.
 
-### 3. Prepare the server (once)
+### 4. Prepare the server (once)
 
 ```bash
-ssh azureuser@<VM-IP>
+ssh -i ~/.ssh/xylosync_oracle ubuntu@<VM-IP>
 curl -fsSL https://raw.githubusercontent.com/vedantterse/XyloSync/main/deploy/setup-vm.sh | bash
 exit                     # log out and back in so the docker group applies
 ```
 
-The setup script installs Docker, adds a 2 GB swap file, turns on the firewall (22, 80 and 443
-only), caps Docker's log sizes and creates `/opt/xylosync`.
+The setup script installs Docker, opens ports 80 and 443 in the server's own firewall (Oracle's
+Ubuntu images reject them by default), caps Docker's log sizes and creates `/opt/xylosync`.
+Swap is only added on machines with less than 2 GB of RAM.
 
-### 4. Create the production settings on the server
+### 5. Create the production settings on the server
 
 ```bash
-ssh azureuser@<VM-IP>
+ssh -i ~/.ssh/xylosync_oracle ubuntu@<VM-IP>
 cd /opt/xylosync
 curl -fsSLo .env https://raw.githubusercontent.com/vedantterse/XyloSync/main/deploy/.env.production.example
 openssl rand -hex 32     # run three times: APP_SECRET, WEBHOOK_SECRET, MINIO_ROOT_PASSWORD
@@ -93,39 +111,45 @@ nano .env                # fill in the secrets, ACME_EMAIL and your SMTP details
 chmod 600 .env
 ```
 
-**Email:** Azure blocks outgoing port 25, so the server can't send mail directly. Use any SMTP
-relay on port 587 (Brevo, Resend, Mailgun, Amazon SES, or Gmail with an app password) and put its
-host, user and password in `.env`. For your relay to accept `MAIL_FROM`, add the DNS records it
-asks for (SPF/DKIM) to `xylosync.in`.
+**Email:** cloud servers block outgoing port 25, so use an SMTP relay on port 587. XyloSync uses
+SMTP2GO (`mail.smtp2go.com`). Put its user and password in `.env`, and keep `MAIL_FROM` on the
+verified domain, for example `XyloSync <no-reply@xylosync.in>`.
 
-### 5. Give GitHub a deploy key
+### 6. Give GitHub the deploy key
 
-Create a dedicated key just for deployments (on your PC):
+Create a dedicated key just for deployments (on your PC). Its `.pub` half is what you pasted into
+the VM in step 1:
 
 ```bash
-ssh-keygen -t ed25519 -f xylosync_deploy -C github-actions -N ""
-ssh-copy-id -i xylosync_deploy.pub azureuser@<VM-IP>      # or paste the .pub into ~/.ssh/authorized_keys on the VM
+ssh-keygen -t ed25519 -f ~/.ssh/xylosync_oracle -C github-actions -N ""
 ssh-keyscan -H <VM-IP>                                    # copy this output for VM_KNOWN_HOSTS
 ```
 
-Then on GitHub → **XyloSync repo → Settings → Secrets and variables → Actions → New repository
-secret**, add:
+Then on GitHub → **XyloSync repo → Settings → Secrets and variables → Actions**, set (or update):
 
 | Secret | Value |
 | --- | --- |
 | `VM_HOST` | the VM's IP |
-| `VM_USER` | `azureuser` |
-| `VM_SSH_KEY` | the whole contents of the `xylosync_deploy` file (the private key) |
+| `VM_USER` | `ubuntu` |
+| `VM_SSH_KEY` | the whole contents of `~/.ssh/xylosync_oracle` (the private key) |
 | `VM_KNOWN_HOSTS` | the `ssh-keyscan` output (pins the server's identity) |
 
-The deploy job uses a GitHub *environment* called `production` (it's created automatically on the
-first run). Under **Settings → Environments → production** you can add yourself as a required
-reviewer if you want to approve each deploy by hand.
+Or from a terminal with the GitHub CLI:
+
+```bash
+gh secret set VM_HOST --body "<VM-IP>"
+gh secret set VM_USER --body "ubuntu"
+gh secret set VM_SSH_KEY < ~/.ssh/xylosync_oracle
+ssh-keyscan -H <VM-IP> | gh secret set VM_KNOWN_HOSTS
+```
+
+The deploy job uses a GitHub *environment* called `production`. Under **Settings → Environments →
+production** you can add yourself as a required reviewer if you want to approve each deploy by hand.
 
 Until `VM_HOST` and `VM_USER` are set, pushes still run the tests and build the image, and the
 deploy step skips itself.
 
-### 6. Deploy
+### 7. Deploy
 
 Push to `main`, or open **Actions → Deploy → Run workflow**. Watch the run:
 **End-to-end tests → Build and push image → Deploy to production**. The first deploy takes a few
@@ -142,7 +166,7 @@ open **https://xylosync.in**.
 - **From the server (instant, no download):** the last 5 versions stay on the VM.
 
   ```bash
-  ssh azureuser@<VM-IP>
+  ssh -i ~/.ssh/xylosync_oracle ubuntu@<VM-IP>
   cd /opt/xylosync
   ./rollback.sh --list        # what was deployed and when
   ./rollback.sh               # back to the previous version
@@ -162,7 +186,7 @@ grep IMAGE_TAG .env                                              # which version
 ```
 
 - **Storage console (MinIO):** it's only reachable through an SSH tunnel. Run
-  `ssh -L 9001:127.0.0.1:9001 azureuser@<VM-IP>`, then open http://localhost:9001.
+  `ssh -i ~/.ssh/xylosync_oracle -L 9001:127.0.0.1:9001 ubuntu@<VM-IP>`, then open http://localhost:9001.
 - **Change a setting:** edit `.env`, then `docker compose -f docker-compose.prod.yml up -d`.
 - **Security updates:** Ubuntu installs them automatically (unattended-upgrades is on by default).
   Reboot once in a while with `sudo reboot`; every service starts again by itself.
@@ -171,10 +195,10 @@ grep IMAGE_TAG .env                                              # which version
 
 | File | Where it runs | What it does |
 | --- | --- | --- |
-| `docker-compose.prod.yml` | VM | The production stack with memory caps; Caddy is the only thing on ports 80/443 |
+| `docker-compose.prod.yml` | VM | The production stack with memory caps for a 1 GB VM; Caddy is the only thing on ports 80/443 |
 | `Caddyfile` | VM | HTTPS for `xylosync.in`, `www` → apex redirect, streaming uploads, WebSockets |
 | `deploy.sh` | VM | Pull a version, switch to it, health-check, auto-rollback, keep the last 5 |
 | `rollback.sh` | VM | Go back to the previous (or a named) version |
-| `setup-vm.sh` | VM, once | Docker, swap, firewall, log limits, `/opt/xylosync` |
+| `setup-vm.sh` | VM, once | Docker, firewall (Oracle iptables or ufw), swap on small VMs, log limits, `/opt/xylosync` |
 | `.env.production.example` | VM | Template for `/opt/xylosync/.env` |
 | `../.github/workflows/deploy.yml` | GitHub | Test → build → push → deploy, plus manual redeploys of any tag |
