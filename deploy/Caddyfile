@@ -1,8 +1,6 @@
 # Caddy gets and renews HTTPS certificates for the domain automatically (Let's Encrypt).
-# DOMAIN and ACME_EMAIL come from .env through docker-compose.prod.yml.
-{
-	email {$ACME_EMAIL}
-}
+# No account email: Let's Encrypt no longer sends expiry mails, and Caddy renews on its own.
+# DOMAIN comes from .env through docker-compose.prod.yml.
 
 {$DOMAIN} {
 	# Compress text only. Files are left alone so downloads keep byte ranges (resume, video seeking).

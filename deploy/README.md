@@ -107,7 +107,7 @@ ssh -i ~/.ssh/xylosync_oracle ubuntu@<VM-IP>
 cd /opt/xylosync
 curl -fsSLo .env https://raw.githubusercontent.com/vedantterse/XyloSync/main/deploy/.env.production.example
 openssl rand -hex 32     # run three times: APP_SECRET, WEBHOOK_SECRET, MINIO_ROOT_PASSWORD
-nano .env                # fill in the secrets, ACME_EMAIL and your SMTP details
+nano .env                # fill in the secrets and your SMTP details
 chmod 600 .env
 ```
 
